@@ -1,0 +1,46 @@
+<configuration>
+	<model>
+		<source type="mysql">
+			<server>localhost</server>
+			<user>root</user>
+			<password>1234</password>
+			<database>uco</database>
+		</source>
+		<ratings type="mysql">
+			<table>uco_punctuated_subject</table>
+			<user>user_id</user>
+			<item>subject_id</item>
+			<preference>rating</preference>
+		</ratings>
+		<scores type="mysql">
+			<table>uco_punctuated_subject</table>
+			<user>user_id</user>
+			<item>subject_id</item>
+			<preference>score</preference>
+		</scores>
+		<specialties type="mysql">
+			<table>uco_user</table>
+			<user>id</user>
+			<item>specialty_id</item>
+			<preference>bool</preference>
+		</specialties>
+		<teaching type="mysql">
+			<table>uco_teaching</table>
+			<user>subject_id</user>
+			<item>professor_id</item>
+			<preference>bool</preference>
+		</teaching>
+		<departments type="mysql">
+			<table>uco_subject</table>
+			<user>id</user>
+			<item>department_id</item>
+			<preference>bool</preference>
+		</departments>
+		<skills type="mysql">
+			<table>uco_subject_skill</table>
+			<user>subject_id</user>
+			<item>skill_id</item>
+			<preference>bool</preference>
+		</skills>
+	</model>
+</configuration>

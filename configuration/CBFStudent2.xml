@@ -1,0 +1,19 @@
+<configuration>
+	<recommender name = 'recommender.CBFStudent'>
+		<normalize>false</normalize>
+		<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
+		LogLikelihoodSimilarity / SpearmanCorrelationSimilarity	/ UncenteredCosineSimilarity -->
+		<similarity>
+			<ratingSimilarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</ratingSimilarity>
+			<scoreSimilarity>org.apache.mahout.cf.taste.impl.similarity.CityBlockSimilarity</scoreSimilarity>
+			<ratingsWeight>0.3</ratingsWeight>
+		</similarity>
+		<!-- NearestNUserNeighborhood / ThresholdUserNeighborhood -->
+		<neighborhood>
+			<!-- 1: NearestNUserNeighborhood, 2: ThresholdUserNeighborhood -->
+			<option>1</option>
+			<size>5</size> <!-- for option 1 -->
+			<threshold>0.5</threshold> <!-- for option 2 -->
+		</neighborhood>
+	</recommender>
+</configuration>

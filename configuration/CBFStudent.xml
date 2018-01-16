@@ -1,0 +1,15 @@
+<configuration>
+	<recommender name = 'recommender.CBFStudent'>
+		<normalize>false</normalize>
+		<similarity>
+			<ratingSimilarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</ratingSimilarity>
+			<scoreSimilarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</scoreSimilarity>
+			<ratingsWeight>0.9</ratingsWeight>
+		</similarity>
+		<neighborhood>
+			<option>1</option>
+			<size>5</size> <!-- for option 1 -->
+			<threshold>0.5</threshold> <!-- for option 2 -->
+		</neighborhood>
+	</recommender>
+</configuration>

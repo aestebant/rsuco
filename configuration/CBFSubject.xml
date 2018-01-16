@@ -1,0 +1,10 @@
+<configuration>
+	<recommender name='recommender.CBFSubject'>
+		<similarity>
+			<!-- TanimotoCoefficientSimilarity / LogLikelihoodSimilarity -->
+			<teachingSimilarity>org.apache.mahout.cf.taste.impl.similarity.TanimotoCoefficientSimilarity</teachingSimilarity>
+			<skillSimilarity>org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity</skillSimilarity>
+			<teachingWeight>0</teachingWeight>
+		</similarity>
+	</recommender>
+</configuration>

@@ -1,0 +1,14 @@
+<configuration>
+	<evaluator>
+		<seed>10</seed>
+		<error>
+			<trainPercent>0.9</trainPercent>
+			<compPercent>1</compPercent>
+		</error>
+		<stats>
+			<at>10</at>
+			<compPercent>1</compPercent>
+		</stats>
+		<recommender>configuration/CBFSubject.xml</recommender>
+	</evaluator>
+</configuration>

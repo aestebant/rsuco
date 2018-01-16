@@ -1,0 +1,113 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>Recommender</groupId>
+	<artifactId>recommender</artifactId>
+	<version>0.1</version>
+	<packaging>jar</packaging>
+
+	<name>recommender</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<mahout.version>0.9</mahout.version>
+		<mahout.groupid>org.apache.mahout</mahout.groupid>
+		<lucene.version>7.2.0</lucene.version>
+		<lucene.groupid>org.apache.lucene</lucene.groupid>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-configuration2</artifactId>
+			<version>2.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.9.3</version>
+		</dependency>
+		<dependency>
+		    <groupId>commons-pool</groupId>
+		    <artifactId>commons-pool</artifactId>
+		    <version>1.6</version>
+		</dependency>
+		<dependency>
+		    <groupId>commons-dbcp</groupId>
+		    <artifactId>commons-dbcp</artifactId>
+		    <version>1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-core</artifactId>
+			<version>${mahout.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-core</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+			<version>${mahout.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-math</artifactId>
+			<version>${mahout.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-math</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+			<version>${mahout.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-utils</artifactId>
+			<version>0.5</version>
+		</dependency>
+		<dependency>
+			<groupId>${mahout.groupid}</groupId>
+			<artifactId>mahout-integration</artifactId>
+			<version>${mahout.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>5.1.6</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/log4j/log4j -->
+		<dependency>
+		    <groupId>log4j</groupId>
+		    <artifactId>log4j</artifactId>
+		    <version>1.2.17</version>
+		</dependency>
+		<dependency>
+			<groupId>${lucene.groupid}</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>${lucene.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>${lucene.groupid}</groupId>
+			<artifactId>lucene-queries</artifactId>
+			<version>${lucene.version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-common -->
+		<dependency>
+		    <groupId>${lucene.groupid}</groupId>
+		    <artifactId>lucene-analyzers-common</artifactId>
+		    <version>${lucene.version}</version>
+		</dependency>
+				
+	</dependencies>
+	
+	<description>Algorithm for recommendation of subjects of Computer Engineering Degree of University of Córdoba</description>
+</project>

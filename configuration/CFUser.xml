@@ -1,0 +1,14 @@
+<configuration>
+	<recommender name = 'recommender.CFUser'>
+		<normalize>true</normalize>
+		<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
+		SpearmanCorrelationSimilarity / UncenteredCosineSimilarity -->
+		<similarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</similarity>
+		<neighborhood>
+			<!-- 1: NearestNUserNeighborhood / 2: ThresholdUserNeighborhood -->
+			<option>1</option>
+			<size>5</size> <!-- for option 1 -->
+			<threshold>0.5</threshold> <!-- for option 2 -->
+		</neighborhood>
+	</recommender>
+</configuration>
