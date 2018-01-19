@@ -7,9 +7,7 @@ import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.GenericItemSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 
-import subjectSimilarity.ContentSimilarity;
-import subjectSimilarity.TeachersContentSimilarity;
-import subjectSimilarity.TeachersDepartmentSkillsSimilarity;
+import subjectSimilarity.MultiSimilarity;
 import util.ContentSubjectManage;
 
 /**
@@ -23,9 +21,8 @@ public class CBFSubject extends ARecommender {
 	/////////////////////////////////////////////
 	private DataModel teaching;
 	private DataModel departments;
-	private DataModel skills;
-	
-	ContentSubjectManage contentSimilarities;
+	private DataModel skills;	
+	private ContentSubjectManage contents;
 	
 	private GenericItemSimilarity similarity;
 	private Configuration configSim;
@@ -39,7 +36,7 @@ public class CBFSubject extends ARecommender {
 	@Override
 	public void execute(DataModel model) {
 		try {
-			similarity = new GenericItemSimilarity(new TeachersContentSimilarity(teaching,contentSimilarities,configSim), model);
+			similarity = new GenericItemSimilarity(new MultiSimilarity(teaching, departments, skills, contents, configSim), model);
 				
 			recommender = new CachingRecommender(new GenericItemBasedRecommender(model, similarity));
 		} catch (TasteException e) {
@@ -56,15 +53,15 @@ public class CBFSubject extends ARecommender {
 		// Standard configuration
 		super.configure(config);
 
-		contentSimilarities = new ContentSubjectManage();
+		contents = new ContentSubjectManage();
 		// Load data model that relate subjects with teachers
 		teaching = mm.loadModel("teaching");
-		/*
+		
 		// Load data model that relate subjects with skills
 		skills = mm.loadModel("skills");
 		
 		// Load departments of subjects
-		departments = mm.loadModel("departments");*/
+		departments = mm.loadModel("departments");
 		
 		configSim = config.subset("similarity");
 	}

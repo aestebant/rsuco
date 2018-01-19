@@ -3,6 +3,7 @@ package util;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import org.apache.commons.math3.linear.*;
@@ -14,46 +15,21 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.store.*;
 import org.apache.lucene.util.*;
 
+/**
+ * Testing similarity between two TXT files
+ * 
+ * @author aurora
+ *
+ */
 public class CosineDocumentSimilarity {
 
-	public static final String CONTENT = "Content";
+	private static final String CONTENT = "Content";
 
-	private final Set<String> terms = new HashSet<>();
-	private final RealVector v1;
-	private final RealVector v2;
-	private final List<String> stopwords = Arrays.asList("contenidos", "teóricos", "teórico", "práctica", "prácticos", "bloque", "unidad", "tema", "temático", 
-			"0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+	// Path to file with domain-aware stopwords
+	private static final String STOPWORDS = "configuration/stopWords.txt";
 
-	public CosineDocumentSimilarity(Path p1, Path p2) throws IOException {
-		Directory directory = createIndex(p1, p2);
-		IndexReader reader = DirectoryReader.open(directory);
-		Map<String, Integer> f1 = getTermFrequencies(reader, 0);
-		Map<String, Integer> f2 = getTermFrequencies(reader, 1);
-		reader.close();
-		
-		v1 = toRealVector(f1);
-		v2 = toRealVector(f2);
-	}
-
-	Directory createIndex(Path p1, Path p2) throws IOException {
-		Directory directory = new RAMDirectory();
-		CharArraySet cas = SpanishAnalyzer.getDefaultStopSet();
-		cas.addAll(stopwords);
-
-		Analyzer analyzer = new SpanishAnalyzer(cas);
-		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-		IndexWriter writer = new IndexWriter(directory, iwc);
-
-		addDocument(writer, p1);
-		addDocument(writer, p2);
-		
-		writer.close();
-		return directory;
-	}
-
-	/* Indexed, tokenized, stored. */
-	public static final FieldType TYPE_STORED = new FieldType();
-
+	// Indexed, tokenized, stored type of indexing
+	private static final FieldType TYPE_STORED = new FieldType();
 	static {
 		TYPE_STORED.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
 		TYPE_STORED.setTokenized(true);
@@ -61,6 +37,42 @@ public class CosineDocumentSimilarity {
 		TYPE_STORED.setStoreTermVectors(true);
 		TYPE_STORED.setStoreTermVectorPositions(true);
 		TYPE_STORED.freeze();
+	}
+
+	private final Set<String> terms = new HashSet<>();
+	private final RealVector v1;
+	private final RealVector v2;
+
+	public CosineDocumentSimilarity(Path p1, Path p2) throws IOException {
+		Directory directory = createIndex(p1, p2);
+		IndexReader reader = DirectoryReader.open(directory);
+		Map<String, Integer> f1 = getTermFrequencies(reader, 0);
+		Map<String, Integer> f2 = getTermFrequencies(reader, 1);
+		reader.close();
+
+		v1 = toRealVector(f1);
+		v2 = toRealVector(f2);
+	}
+
+	Directory createIndex(Path p1, Path p2) throws IOException {
+		Directory directory = new RAMDirectory();
+
+		// Configure stop words
+		CharArraySet analyzerConfig = SpanishAnalyzer.getDefaultStopSet();
+		Path stopWordsFile = Paths.get(STOPWORDS);
+		List<String> domainStopSet = Files.readAllLines(stopWordsFile);
+		analyzerConfig.addAll(domainStopSet);
+
+		// Create Spanish analyzer
+		Analyzer analyzer = new SpanishAnalyzer(analyzerConfig);
+		IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+		IndexWriter writer = new IndexWriter(directory, iwc);
+
+		addDocument(writer, p1);
+		addDocument(writer, p2);
+
+		writer.close();
+		return directory;
 	}
 
 	void addDocument(IndexWriter writer, Path file) throws IOException {

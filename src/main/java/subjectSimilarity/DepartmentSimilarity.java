@@ -1,27 +1,26 @@
 package subjectSimilarity;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
+import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 
-import util.ContentSubjectManage;
-
 /**
- * Item based similarity for subjects It takes the common teachers of each pair
+ * Item based similarity for subjects based on common department
  * 
  * @author Aurora Esteban Toscano
  */
-public class ContentSimilarity implements ItemSimilarity {
+public class DepartmentSimilarity implements ItemSimilarity {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private ContentSubjectManage similarities;
-	
+	private DataModel departments;
+
 	// Threshold to consider two subjects similar
 	private final static double THRESHOLD = 0.3;
 
@@ -29,48 +28,51 @@ public class ContentSimilarity implements ItemSimilarity {
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
 	/**
-	 * Previous calculations for this hybrid similarity. Initialize the data and
-	 * compute professors-based similarity.
+	 * Initialize data model
 	 * 
-	 * @param teaching
-	 *            boolean dataModel with subjects as users and teachers as items
 	 * @param departments
-	 * 
 	 */
-	public ContentSimilarity(ContentSubjectManage similarities) {
-		this.similarities = similarities;
+	public DepartmentSimilarity(DataModel departments) {
+		this.departments = departments;
 	}
 
 	@Override
 	public double[] itemSimilarities(long subject1, long[] others) throws TasteException {
 		double[] result = new double[others.length];
 		for (int i = 0; i < others.length; i++) {
-			result[i] = similarities.getContentSimilarity(subject1, others[i]);
+			result[i] = itemSimilarity(subject1, others[i]);
 		}
 		return result;
 	}
 
 	/**
-	 * Compute a similarity based on boolean existence of commons teachers and commons skills in two
-	 * subjects, as well as benefit if they belong to the same department.
-	 * @throws TasteException
+	 * Compute similarity between two subjects based on their departments in common
+	 * Since each one belongs to one department, expected similarity is 0 or 1
 	 */
 	@Override
 	public double itemSimilarity(long subject1, long subject2) throws TasteException {
-		return similarities.getContentSimilarity(subject1, subject2);
+		FastIDSet department1 = null, department2 = null;
+		try {
+			department1 = departments.getItemIDsFromUser(subject1);
+			department2 = departments.getItemIDsFromUser(subject2);
+		} catch (TasteException e) {
+			e.printStackTrace();
+		}
+		int interSize = department1.intersectionSize(department2);
+
+		return (double) interSize / (double) department1.size();
 	}
 
 	@Override
 	public long[] allSimilarItemIDs(long subject) throws TasteException {
 		FastIDSet similars = new FastIDSet();
-		List<Long> allSubjects = similarities.getMapSubject();
+		LongPrimitiveIterator allSubjects = departments.getUserIDs();
 
-		for (long possiblySimilar : allSubjects) {
-			if (subject != possiblySimilar) {
-				double score = itemSimilarity(subject, possiblySimilar);
-				if (score > THRESHOLD)
-					similars.add(possiblySimilar);
-			}
+		while (allSubjects.hasNext()) {
+			long possiblySimilar = allSubjects.nextLong();
+			double score = itemSimilarity(subject, possiblySimilar);
+			if (score > THRESHOLD)
+				similars.add(possiblySimilar);
 		}
 		return similars.toArray();
 	}
