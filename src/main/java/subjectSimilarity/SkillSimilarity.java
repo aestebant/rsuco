@@ -107,5 +107,4 @@ public class SkillSimilarity implements ItemSimilarity, IConfiguration {
 			e.printStackTrace();
 		}
 	}
-
 }

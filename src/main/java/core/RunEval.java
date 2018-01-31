@@ -1,5 +1,7 @@
 package core;
 
+import java.util.Map;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
 
@@ -33,24 +35,15 @@ class RunEval {
 
 		DataModel model = mm.loadModel("ratings");
 		
-		Evaluator evaluator = new Evaluator(model);
+		Evaluator evaluator = new Evaluator(13);
 		if (evaluator instanceof IConfiguration)
 			((IConfiguration) evaluator).configure(config.subset("evaluator"));
 			
-		evaluator.execute();
+		Map<String, Double> results = evaluator.execute(model);
 		
 		System.out.println("Configuration tested: " + config.getString("evaluator.recommender"));
 		
-		System.out.println("----Deviation----");
-		System.out.println("RMSE:\t\t" + evaluator.getRMSE());
-		System.out.println("MAE:\t\t" + evaluator.getMAE());
-		
-		System.out.println("----Statistics----");
-		System.out.println("Precision:\t" + evaluator.getStats().getPrecision());
-		System.out.println("Recall:\t\t" + evaluator.getStats().getRecall());
-		System.out.println("F1-score:\t" + evaluator.getStats().getF1Measure());
-		System.out.println("Fall-out:\t" + evaluator.getStats().getFallOut());
-		System.out.println("nGCD:\t\t" + evaluator.getStats().getNormalizedDiscountedCumulativeGain());
-		System.out.println("Reach:\t\t" + evaluator.getStats().getReach());
+		for (String key : results.keySet())
+			System.out.println(key + "-> " + results.get(key));
 	}
 }

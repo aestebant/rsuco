@@ -1,4 +1,5 @@
 contenidos
+teoría
 teóricos
 teórico
 práctica
@@ -9,6 +10,11 @@ tema
 temático
 introducción
 fundamentos
+cálculo
+concepto
+resolución
+problemas
+definición
 i
 ii
 iii

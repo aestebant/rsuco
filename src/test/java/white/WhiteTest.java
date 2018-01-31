@@ -12,7 +12,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.junit.Test;
 
-import evaluator.Evaluator;
+import evaluator.IREvaluator;
 import util.ConfigLoader;
 import util.ModelManage;
 
@@ -87,18 +87,15 @@ public class WhiteTest {
 	public final void testEvaluator() {
 		commonPreTest();
 		DataModel ratings = mm.loadModel("ratings");
-		Evaluator evaluator = new Evaluator(ratings);
-		Configuration config = ConfigLoader.XMLFile("configuration/Evaluator.xml");
-		evaluator.configure(config.subset("evaluator"));
-		evaluator.execute();
+		IREvaluator iREvaluator = new IREvaluator(ratings);
+		Configuration config = ConfigLoader.XMLFile("configuration/IREvaluator.xml");
+		iREvaluator.configure(config.subset("evaluator"));
+		iREvaluator.execute();
 		
-		assertTrue(evaluator.getMAE() <= 5);
-		assertTrue(evaluator.getRMSE() <= 5);
-		
-		assertTrue(evaluator.getStats().getPrecision() <= 1);
-		assertTrue(evaluator.getStats().getRecall() <= 1);
-		assertTrue(evaluator.getStats().getFallOut() <= 1);
-		assertTrue(evaluator.getStats().getNormalizedDiscountedCumulativeGain() <= 1);
-		assertTrue(evaluator.getStats().getF1Measure() <= 1);
+		assertTrue(iREvaluator.getStats().getPrecision() <= 1);
+		assertTrue(iREvaluator.getStats().getRecall() <= 1);
+		assertTrue(iREvaluator.getStats().getFallOut() <= 1);
+		assertTrue(iREvaluator.getStats().getNormalizedDiscountedCumulativeGain() <= 1);
+		assertTrue(iREvaluator.getStats().getF1Measure() <= 1);
 	}
 }

@@ -1,6 +1,7 @@
 package evaluator;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -17,7 +18,6 @@ import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
-import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -44,9 +44,17 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractDifferenceRecommenderEvaluator.class);
 
-	private final Random random;
+	protected final Random random;
 	private float maxPreference;
 	private float minPreference;
+	
+	// Classification metrics
+	protected RunningAverageAndStdDev accuracy;
+	protected RunningAverageAndStdDev precission;
+	protected RunningAverageAndStdDev recall;
+	
+	// Personalized threshold for each user for split ratings in goods and bads
+	protected Map<Long, Double> usersThresh;
 
 	protected AbstractDifferenceRecommenderEvaluator(long seed) {
 		if (seed == -1)
@@ -58,27 +66,7 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 	}
 
 	@Override
-	public final float getMaxPreference() {
-		return maxPreference;
-	}
-
-	@Override
-	public final void setMaxPreference(float maxPreference) {
-		this.maxPreference = maxPreference;
-	}
-
-	@Override
-	public final float getMinPreference() {
-		return minPreference;
-	}
-
-	@Override
-	public final void setMinPreference(float minPreference) {
-		this.minPreference = minPreference;
-	}
-
-	@Override
-	public double evaluate(RecommenderBuilder recommenderBuilder, DataModelBuilder dataModelBuilder,
+	public Map<String, Double> evaluate(RecommenderBuilder recommenderBuilder, DataModelBuilder dataModelBuilder,
 			DataModel dataModel, double trainingPercentage, double evaluationPercentage) throws TasteException {
 		Preconditions.checkNotNull(recommenderBuilder);
 		Preconditions.checkNotNull(dataModel);
@@ -89,8 +77,11 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 						+ ". Must be: 0.0 <= evaluationPercentage <= 1.0");
 
 		log.info("Beginning evaluation using {} of {}", trainingPercentage, dataModel);
-
+		
 		int numUsers = dataModel.getNumUsers();
+		
+		getUsersThresholds(dataModel);
+		
 		FastByIDMap<PreferenceArray> trainingPrefs = new FastByIDMap<PreferenceArray>(
 				1 + (int) (evaluationPercentage * numUsers));
 		FastByIDMap<PreferenceArray> testPrefs = new FastByIDMap<PreferenceArray>(
@@ -109,11 +100,20 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 
 		Recommender recommender = recommenderBuilder.buildRecommender(trainingModel);
 
-		double result = getEvaluation(testPrefs, recommender);
+		Map<String, Double> result = getEvaluation(testPrefs, recommender);
 		log.info("Evaluation result: {}", result);
 		return result;
 	}
 
+	/**
+	 * Split randomly user preferences in train and test.
+	 * @param trainingPercentage
+	 * @param trainingPrefs
+	 * @param testPrefs
+	 * @param userID
+	 * @param dataModel
+	 * @throws TasteException
+	 */
 	private void splitOneUsersPrefs(double trainingPercentage, FastByIDMap<PreferenceArray> trainingPrefs,
 			FastByIDMap<PreferenceArray> testPrefs, long userID, DataModel dataModel) throws TasteException {
 		List<Preference> oneUserTrainingPrefs = null;
@@ -152,7 +152,7 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 		return estimate;
 	}
 
-	private double getEvaluation(FastByIDMap<PreferenceArray> testPrefs, Recommender recommender)
+	protected Map<String, Double> getEvaluation(FastByIDMap<PreferenceArray> testPrefs, Recommender recommender)
 			throws TasteException {
 		reset();
 		Collection<Callable<Void>> estimateCallables = Lists.newArrayList();
@@ -164,7 +164,17 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 		log.info("Beginning evaluation of {} users", estimateCallables.size());
 		RunningAverageAndStdDev timing = new FullRunningAverageAndStdDev();
 		execute(estimateCallables, noEstimateCounter, timing);
-		return computeFinalEvaluation();
+		
+		Map<String, Double> result = new HashMap<String, Double>();
+		result.put("noEstimate", (double)noEstimateCounter.get());
+		result.put("accuracy", accuracy.getAverage());
+		result.put("precission", precission.getAverage());
+		result.put("recall", recall.getAverage());
+		
+		Map <String, Double> finalEval = computeFinalEvaluation();
+		result.putAll(finalEval);
+		
+		return result;
 	}
 
 	protected static void execute(Collection<Callable<Void>> callables, AtomicInteger noEstimateCounter,
@@ -209,15 +219,61 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 	protected abstract void reset();
 
 	protected abstract void processOneEstimate(float estimatedPreference, Preference realPref);
-
-	protected abstract double computeFinalEvaluation();
-
+	
+	protected void processOneStats(int tp, int tn, int fp, int fn) {
+		if (tp + tn + fp + fn != 0)
+			accuracy.addDatum((double)(tp+tn) / (double)(tp+tn+fp+fn));
+		if (tp+fp != 0)
+			precission.addDatum((double)(tp) / (double)(tp+fp));
+		if (tp+fn != 0)
+			recall.addDatum((double)(tp) / (double)(tp+fn));
+	}
+	
+	protected void getUsersThresholds(DataModel model) {
+		usersThresh = new HashMap<Long, Double>();
+		LongPrimitiveIterator it = null;
+		try {
+			it = model.getUserIDs();
+			while(it.hasNext()) {
+				long userID = it.nextLong();
+				PreferenceArray prefs = model.getPreferencesFromUser(userID);
+				double threshold = computeThreshold(prefs);
+				usersThresh.put(userID, threshold);
+			}
+		} catch (TasteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private double computeThreshold(PreferenceArray prefs) {
+		
+		if (prefs.length() < 2) {
+			// Not enough data points -- return a threshold that allows everything
+			return Double.NEGATIVE_INFINITY;
+		}
+		RunningAverageAndStdDev stdDev = new FullRunningAverageAndStdDev();
+		int size = prefs.length();
+		for (int i = 0; i < size; i++) {
+			stdDev.addDatum(prefs.getValue(i));
+		}
+		double[] result = new double[2];
+		result[0] = stdDev.getAverage();
+		result[1] = stdDev.getStandardDeviation();
+		return  result[0] ;
+	}
+	
+	protected abstract Map<String, Double> computeFinalEvaluation();
+	
 	public final class PreferenceEstimateCallable implements Callable<Void> {
 
 		private final Recommender recommender;
 		private final long testUserID;
 		private final PreferenceArray prefs;
 		private final AtomicInteger noEstimateCounter;
+		
+		protected int tp = 0, tn = 0, fp = 0, fn = 0;
 		
 		public PreferenceEstimateCallable(Recommender recommender, long testUserID, PreferenceArray prefs,
 				AtomicInteger noEstimateCounter) {
@@ -229,10 +285,11 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 
 		@Override
 		public Void call() throws TasteException {
+			double threshold = usersThresh.get(testUserID);
 			for (Preference realPref : prefs) {
-				float estimatedPreference = Float.NaN;
+				float estimatedPref = Float.NaN;
 				try {
-					estimatedPreference = recommender.estimatePreference(testUserID, realPref.getItemID());
+					estimatedPref = recommender.estimatePreference(testUserID, realPref.getItemID());
 				} catch (NoSuchUserException nsue) {
 					// It's possible that an item exists in the test data but not training data in
 					// which case
@@ -241,16 +298,26 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 				} catch (NoSuchItemException nsie) {
 					log.info("Item exists in test data but not training data: {}", realPref.getItemID());
 				}
-				if (Float.isNaN(estimatedPreference)) {
+				if (Float.isNaN(estimatedPref)) {
 					noEstimateCounter.incrementAndGet();
 				} else {
-					estimatedPreference = capEstimatedPreference(estimatedPreference);
-					processOneEstimate(estimatedPreference, realPref);
+					estimatedPref = capEstimatedPreference(estimatedPref);
+					processOneEstimate(estimatedPref, realPref);
+					
+					if (estimatedPref >= threshold && realPref.getValue() >= threshold)
+						tp++;
+					else if (estimatedPref >= threshold && realPref.getValue() < threshold)
+						fp++;
+					else if (estimatedPref < threshold && realPref.getValue() >= threshold)
+						fn++;
+					else
+						tn++;
 				}
 			}
+			
+			processOneStats(tp, tn, fp, fn);
 			return null;
 		}
-
 	}
 
 }

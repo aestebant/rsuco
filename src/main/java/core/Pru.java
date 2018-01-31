@@ -23,8 +23,6 @@ public class Pru {
 	
 	public static void main(String[] args) {
 		ContentSubjectManage manager = new ContentSubjectManage();
-		
-		System.out.println(manager.getContentSimilarity(1, 6));
 	}
 
 }

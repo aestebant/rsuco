@@ -73,6 +73,7 @@ public class ModelManage implements IConfiguration {
 				model = new FileDataModel(new File(params.get(0)));
 			} catch (IOException e) {
 				e.printStackTrace();
+				System.exit(-1);
 			}
 			return model;
 		}
@@ -90,6 +91,7 @@ public class ModelManage implements IConfiguration {
 				model = new GenericBooleanPrefDataModel(GenericBooleanPrefDataModel.toDataMap(model));
 			} catch (TasteException e) {
 				e.printStackTrace();
+				System.exit(-1);
 			}
 		}
 		// Load a generic data model
@@ -298,6 +300,7 @@ public class ModelManage implements IConfiguration {
 				items3 = model.getItemIDs();
 			} catch (TasteException e) {
 				e.printStackTrace();
+				System.exit(-1);
 			}
 			int j = 0;
 			int k = 0;
@@ -310,6 +313,7 @@ public class ModelManage implements IConfiguration {
 						preference = model.getPreferenceValue(user_id, item_id);
 					} catch (TasteException e) {
 						e.printStackTrace();
+						System.exit(-1);
 					}
 					// Apply the normalization subtracting averages multiplied
 					// by a coefficient to the preference
@@ -349,7 +353,7 @@ public class ModelManage implements IConfiguration {
 
 		default:
 			System.err.println("Cannot recognize source type");
-			System.exit(1);
+			System.exit(-1);
 		}
 	}
 }

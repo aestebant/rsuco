@@ -1,15 +1,11 @@
 package evaluator;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.IRStatistics;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.eval.RecommenderIRStatsEvaluator;
 import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
 import recommender.IRecommender;
@@ -18,32 +14,33 @@ import util.IConfiguration;
 import util.RecommenderLoader;
 
 /**
- * Evaluate a recommender
+ * Evaluate information retrieval stats of a recommender
  * 
  * @author Aurora Esteban Toscano
  */
-public class Evaluator extends AKFoldRecommenderEvaluator2 implements IConfiguration {
+public class IREvaluator implements IConfiguration {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
 	private RecommenderBuilder recommenderBuilder;
+	private DataModel model;
 
-	// Difference based errors
-	private RunningAverageAndStdDev mae;
-	private RunningAverageAndStdDev rmse;
-	
-	// Number of folds in cross-validation
-	private int nFolds;
-	// Percentage of dataModel to compute difference
-	private double compPrcnSc;
+	private long seed; // Get deterministic solutions
+
+	// Statistics of the recommender
+	private RecommenderIRStatsEvaluator evalStats;
+	// Minimum value of preference to consider a item relevant for a user
+	private double threshold; // Automatic threshold
+	private int at; // Number of items to evaluate the relevance
+	private double compPrcnSt; // Percentage of dataModel to compute difference
+	private IRStatistics stats; // Mahout interface for save statistics
 
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
-	public Evaluator(long seed) {
-		super(seed);
-		reset();
+	public IREvaluator(DataModel model) {
+		this.model = model;
 
 		// By default, the log level of Mahout evaluator is INFO
 		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
@@ -53,14 +50,9 @@ public class Evaluator extends AKFoldRecommenderEvaluator2 implements IConfigura
 	/**
 	 * Execute the evaluator by a given configuration
 	 */
-	public Map<String, Double> execute(DataModel model) {
-		try {
-			return evaluate(recommenderBuilder, null, model, nFolds, compPrcnSc);
-		} catch (TasteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
+	public void execute() {
+		evalStats = new GenericRecommenderIRStatsEvaluator(seed);
+		setStats();
 	}
 
 	/**
@@ -83,43 +75,36 @@ public class Evaluator extends AKFoldRecommenderEvaluator2 implements IConfigura
 		};
 	}
 
-	@Override
-	protected void reset() {
-		accuracy = new FullRunningAverageAndStdDev();
-		precission = new FullRunningAverageAndStdDev();
-		recall = new FullRunningAverageAndStdDev();
-		
-		mae = new FullRunningAverageAndStdDev();
-		rmse = new FullRunningAverageAndStdDev();
+	/**
+	 * Get the statistics of the recommender
+	 */
+	private void setStats() {
+		try {
+			stats = evalStats.evaluate(recommenderBuilder, null, model, null, at, threshold, compPrcnSt);
+		} catch (TasteException e) {
+			e.printStackTrace();
+		}
 	}
 
-	@Override
-	protected void processOneEstimate(float estimatedPreference, Preference realPref) {
-		double diff = realPref.getValue() - estimatedPreference;
-		mae.addDatum(Math.abs(diff));
-		rmse.addDatum(diff*diff);
+	public IRStatistics getStats() {
+		return stats;
 	}
 
-	@Override
-	protected Map<String, Double> computeFinalEvaluation() {
-		Map<String, Double> result = new HashMap<String, Double>();
-		
-		result.put("mae", mae.getAverage());
-		result.put("rmse", Math.sqrt(rmse.getAverage()));
-		
-		return result;
+	public void setSeed(long seed) {
+		this.seed = seed;
 	}
 
 	/**
 	 * @see util.IConfiguration#configure(Configuration)
 	 */
 	public void configure(Configuration config) {
-		nFolds = config.getInt("error.nFolds");
-		compPrcnSc = config.getDouble("error.compPercent");
+		at = config.getInt("stats.at");
+		compPrcnSt = config.getDouble("stats.compPercent");
+		threshold = config.getDouble("stats.threshold", Double.NaN);
 
-		/*// If user doesn't specify a seed, a -1 value indicate to the algorithm that
+		// If user doesn't specify a seed, a -1 value indicate to the algorithm that
 		// must be random.
-		seed = config.getLong("seed", -1);*/
+		seed = config.getLong("seed", -1);
 
 		String confPathRecommender = config.getString("recommender");
 		Configuration recommenderConf = ConfigLoader.XMLFile(confPathRecommender);

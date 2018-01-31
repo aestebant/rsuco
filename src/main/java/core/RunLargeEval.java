@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -31,10 +33,10 @@ import util.ModelManage;
  */
 class RunLargeEval {
 
-	static String inputPath = "../../test/sub";
-	static String output = "../../results/cbfsubject.csv";
-	static int startConfs = 1;
-	static int finConfs = 20;
+	static String inputPath = "../test/cbf";
+	static String output = "../results/cbf7.csv";
+	static int startConfs = 116;
+	static int finConfs = 136;
 	static int nThreads = 1;
 
 	static long[] seed = { 10, 20, 30, 40, 50 };
@@ -84,7 +86,7 @@ class RunLargeEval {
 
 		// Write results in the output file
 		File result = new File(output);
-		String head = "Configuration;MAE;;RMSE;;F1-score;;Precission;;Recall;;Fall Out;;nDCG";
+		String head = "Configuration;RMSE;;MAE;;Accuracy;;Precission;;Recall";
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(result));
 			writer.write(head + "\n");
@@ -112,43 +114,29 @@ class RunLargeEval {
 	 * @return average and standard deviation statistics of the recommender
 	 */
 	public static String test(String recoPath) {
-		// Instantiate evaluator
-		Evaluator evaluator = new Evaluator(model);
-
-		// Configure recommender to evaluate
-		evalConf.setProperty("evaluator.recommender", recoPath);
-
-		evaluator.configure(evalConf.subset("evaluator"));
-
-		// Initialize statistics
-		RunningAverageAndStdDev mae = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev rmse = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev precision = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev recall = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev fallout = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev f1 = new FullRunningAverageAndStdDev();
-		RunningAverageAndStdDev dcg = new FullRunningAverageAndStdDev();
+		Map<String, RunningAverageAndStdDev> finalEval = new HashMap<String, RunningAverageAndStdDev>();
 
 		// For each seed execute an evaluation and store the result
 		for (long s : seed) {
-			evaluator.setSeed(s);
-
-			evaluator.execute();
-
-			mae.addDatum(evaluator.getMAE());
-			rmse.addDatum(evaluator.getRMSE());
-			precision.addDatum(evaluator.getStats().getPrecision());
-			recall.addDatum(evaluator.getStats().getRecall());
-			fallout.addDatum(evaluator.getStats().getFallOut());
-			f1.addDatum(evaluator.getStats().getF1Measure());
-			dcg.addDatum(evaluator.getStats().getNormalizedDiscountedCumulativeGain());
+			// Instantiate evaluator
+			Evaluator evaluator = new Evaluator(s);
+			// Configure recommender to evaluate
+			evalConf.setProperty("evaluator.recommender", recoPath);
+			evaluator.configure(evalConf.subset("evaluator"));
+			
+			Map<String, Double> results = evaluator.execute(model);
+			for (String key : results.keySet()) {
+				if (s == seed[0])
+					finalEval.put(key, new FullRunningAverageAndStdDev());
+				finalEval.get(key).addDatum(results.get(key));
+			}
 		}
 
-		String solution = recoPath + ";" + mae.getAverage() + ";" + mae.getStandardDeviation() + ";" + rmse.getAverage()
-				+ ";" + rmse.getStandardDeviation() + ";" + f1.getAverage() + ";" + f1.getStandardDeviation() + ";"
-				+ precision.getAverage() + ";" + +precision.getStandardDeviation() + ";" + recall.getAverage() + ";"
-				+ recall.getStandardDeviation() + ";" + fallout.getAverage() + ";" + fallout.getStandardDeviation()
-				+ ";" + dcg.getAverage() + ";" + dcg.getStandardDeviation();
+		//TODO Arreglar inconsistencia con cabecera
+		String solution = recoPath;
+		for (String key : finalEval.keySet()) {
+			solution.concat(";" + finalEval.get(key).getAverage() + ";" + finalEval.get(key).getStandardDeviation());
+		}
 
 		System.out.println("Finish " + recoPath);
 

@@ -43,7 +43,7 @@ public class ContentSubjectManage {
 	/////////////////////////////////////////////
 	// Database params
 	private static final String CONNECTION = "jdbc:mysql://localhost:3306/uco";
-	private static final String QUERY = "SELECT id, content FROM uco.uco_subject";
+	private static final String QUERY = "SELECT id, content, name FROM uco.uco_subject";
 
 	// Field of the indexation
 	private static final String CONTENT = "Content";
@@ -67,6 +67,7 @@ public class ContentSubjectManage {
 
 	// Subjects id
 	private List<Long> mapSubject;
+	private List<String> nameSubject;
 
 	// Frecuencies of indexes for each subject
 	private List<Map<String, Integer>> allFrequencies;
@@ -85,6 +86,20 @@ public class ContentSubjectManage {
 		createIndex();
 		computeFrequencies();
 		computeSimilarities();
+		/*
+		for (int i=0; i<mapSubject.size(); ++i) {
+			System.out.print(nameSubject.get(i) + ";");
+		}
+		System.out.println();
+		for (int i=0; i<mapSubject.size(); ++i) {
+			for (int j=0; j<mapSubject.size(); ++j) {
+				if (j==0) {
+					System.out.print(nameSubject.get(i) + ";");
+				}
+				System.out.print(similarities[i][j] + ";");
+			}
+			System.out.println();
+		}*/
 	}
 
 	/**
@@ -147,9 +162,11 @@ public class ContentSubjectManage {
 			ResultSet rs = s.executeQuery(QUERY);
 
 			mapSubject = new ArrayList<Long>();
+			nameSubject = new ArrayList<String>();
 			while (rs.next()) {
 				// Relate subject id with index its the similarity matrix
 				mapSubject.add(rs.getLong(1));
+				nameSubject.add(rs.getString(3));
 
 				// Index content
 				Document doc = new Document();
