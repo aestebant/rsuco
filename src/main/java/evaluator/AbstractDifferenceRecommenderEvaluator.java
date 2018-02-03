@@ -167,6 +167,7 @@ public abstract class AbstractDifferenceRecommenderEvaluator implements Recommen
 		
 		Map<String, Double> result = new HashMap<String, Double>();
 		result.put("noEstimate", (double)noEstimateCounter.get());
+		System.out.println(noEstimateCounter.get());
 		result.put("accuracy", accuracy.getAverage());
 		result.put("precission", precission.getAverage());
 		result.put("recall", recall.getAverage());

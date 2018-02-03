@@ -23,7 +23,6 @@ import com.google.common.base.Preconditions;
 
 import evaluator.Evaluator;
 import util.ConfigLoader;
-import util.IConfiguration;
 import util.ModelManage;
 
 /**
@@ -34,14 +33,16 @@ import util.ModelManage;
 class RunLargeEval {
 
 	static String inputPath = "../test/cbf";
-	static String output = "../results/cbf7.csv";
-	static int startConfs = 116;
-	static int finConfs = 136;
+	static String output = "../results/pru.csv";
+	static int startConfs = 1;
+	static int finConfs = 60;
 	static int nThreads = 1;
 
 	static long[] seed = { 10, 20, 30, 40, 50 };
+	static String[] metrics = {"mae", "rmse", "accuracy", "precision", "recall", "noEstimate"};
 	static Configuration evalConf;
 	static DataModel model;
+	static ModelManage mm;
 
 	public static void main(String[] args) {
 		Preconditions.checkArgument(args.length == 1, "Set configuration file");
@@ -52,9 +53,8 @@ class RunLargeEval {
 		// Precompute ratings model because assuming it will be the same in all the
 		// configurations
 		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
-		ModelManage mm = new ModelManage();
-		if (mm instanceof IConfiguration)
-			((IConfiguration) mm).configure(configDM.subset("model"));
+		mm = new ModelManage(configDM);
+		
 		model = mm.loadModel("ratings");
 
 		/**
@@ -86,7 +86,11 @@ class RunLargeEval {
 
 		// Write results in the output file
 		File result = new File(output);
-		String head = "Configuration;RMSE;;MAE;;Accuracy;;Precission;;Recall";
+		
+		String head = "Configuration;";
+		for (String m : metrics)
+			head = head.concat(m + ";;");
+		
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(result));
 			writer.write(head + "\n");
@@ -124,7 +128,7 @@ class RunLargeEval {
 			evalConf.setProperty("evaluator.recommender", recoPath);
 			evaluator.configure(evalConf.subset("evaluator"));
 			
-			Map<String, Double> results = evaluator.execute(model);
+			Map<String, Double> results = evaluator.execute(model, mm);
 			for (String key : results.keySet()) {
 				if (s == seed[0])
 					finalEval.put(key, new FullRunningAverageAndStdDev());
@@ -132,9 +136,8 @@ class RunLargeEval {
 			}
 		}
 
-		//TODO Arreglar inconsistencia con cabecera
 		String solution = recoPath;
-		for (String key : finalEval.keySet()) {
+		for (String key : metrics) {
 			solution.concat(";" + finalEval.get(key).getAverage() + ";" + finalEval.get(key).getStandardDeviation());
 		}
 

@@ -1,10 +1,7 @@
 package evaluator;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,30 +29,27 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceRecommenderEvaluator {
-	
+import util.ModelManage;
+
+public abstract class AKFoldRecommenderEvaluator extends AbstractDifferenceRecommenderEvaluator {
+
 	private int k;
 	private List<FastByIDMap<PreferenceArray>> folds;
-
 	private Map<String, RunningAverage> foldsResults;
-	
-	private static final String CONNECTION = "jdbc:mysql://localhost:3306/uco";
-	private static final String QUERY = "SELECT s.id, count(r.rating) as cuenta" + 
-			" from uco.uco_punctuated_subject r, uco.uco_subject s" + 
-			" where s.id = r.subject_id group by r.subject_id order by cuenta desc;";
-	private List<Long> orderedSubjects;
-	
-	private static final Logger log = LoggerFactory.getLogger(AKFoldRecommenderEvaluator2.class);
 
-	public AKFoldRecommenderEvaluator2(long seed) {
+	private static final String QUERY = "SELECT s.id, count(r.rating) as cuenta"
+			+ " from uco.uco_punctuated_subject r, uco.uco_subject s"
+			+ " where s.id = r.subject_id group by r.subject_id order by cuenta desc;";
+	private List<Long> orderedSubjects;
+
+	private static final Logger log = LoggerFactory.getLogger(AKFoldRecommenderEvaluator.class);
+
+	public AKFoldRecommenderEvaluator(long seed) {
 		super(seed);
-		
-		getOrderedbyNPrefsSubjects();
 	}
 
-	
 	@Override
-	public Map<String,Double> evaluate(RecommenderBuilder recommenderBuilder, DataModelBuilder dataModelBuilder,
+	public Map<String, Double> evaluate(RecommenderBuilder recommenderBuilder, DataModelBuilder dataModelBuilder,
 			DataModel dataModel, double nFolds, double evaluationPercentage) throws TasteException {
 		Preconditions.checkNotNull(recommenderBuilder);
 		Preconditions.checkNotNull(dataModel);
@@ -63,11 +57,12 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 		Preconditions.checkArgument(evaluationPercentage >= 0.0 && evaluationPercentage <= 1.0,
 				"Invalid evaluationPercentage: " + evaluationPercentage
 						+ ". Must be: 0.0 <= evaluationPercentage <= 1.0");
-		
+		Preconditions.checkNotNull(orderedSubjects, "Required first: setOrderedbyNPrefsSubjects");
+
 		log.info("Beginning evaluation using {} of {}", nFolds, dataModel);
 
 		getUsersThresholds(dataModel);
-		
+
 		int numUsers = dataModel.getNumUsers();
 
 		// Get the number of folds
@@ -130,7 +125,7 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 
 			Recommender recommender = recommenderBuilder.buildRecommender(trainingModel);
 
-			Map<String,Double> foldRes = getEvaluation(testPrefs, recommender);
+			Map<String, Double> foldRes = getEvaluation(testPrefs, recommender);
 			for (String key : foldRes.keySet()) {
 				if (k == 0)
 					foldsResults.put(key, new FullRunningAverage());
@@ -140,7 +135,6 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 			log.info("Evaluation result from fold {} : {}", k, foldRes);
 		}
 
-		
 		Map<String, Double> result = new HashMap<String, Double>();
 		for (String key : foldsResults.keySet())
 			result.put(key, foldsResults.get(key).getAverage());
@@ -151,30 +145,30 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 	}
 
 	/**
-	 *  
-	 * @param k
-	 * @param folds
+	 * Take one user preferences and distribute into the k folds paying attention to
+	 * keep balanced subjects per fold according to number of valuations they have
+	 * 
 	 * @param userID
 	 * @param dataModel
 	 * @throws TasteException
 	 */
-	private void splitOneUsersPrefsOrdered(long userID, DataModel dataModel)
-			throws TasteException {
+	private void splitOneUsersPrefsOrdered(long userID, DataModel dataModel) throws TasteException {
 
 		List<List<Preference>> oneUserPrefs = new ArrayList<List<Preference>>(k);
 		for (int i = 0; i < k; i++)
 			oneUserPrefs.add(new ArrayList<Preference>());
 
 		PreferenceArray prefs = dataModel.getPreferencesFromUser(userID);
-		
-		List<Preference> orderedPrefs = new ArrayList<>(prefs.length());
-		
+
+		List<Preference> orderedPrefs = new ArrayList<Preference>(prefs.length());
+
+		// Order user preferences by total number of valuations per subject
 		Iterator<Long> it = orderedSubjects.iterator();
 		while (it.hasNext()) {
 			long itemID = it.next();
 			if (prefs.hasPrefWithItemID(itemID)) {
 				int idx = 0;
-				for (int i = 0; i<prefs.length(); ++i) {
+				for (int i = 0; i < prefs.length(); ++i) {
 					if (prefs.getItemID(i) == itemID)
 						break;
 					idx++;
@@ -183,6 +177,8 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 			}
 		}
 
+		// Starting by a random fold, assign each preference to a fold in consecutive
+		// order
 		int currentBucket = random.nextInt(k);
 		for (int i = 0; i < prefs.length(); i++) {
 
@@ -193,19 +189,27 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 				oneUserPrefs.set(currentBucket, new ArrayList<Preference>());
 			}
 			oneUserPrefs.get(currentBucket).add(newPref);
-			
-			currentBucket = (currentBucket+1) % k;
+
+			currentBucket = (currentBucket + 1) % k;
 		}
+
+		// Assign each partition to its general fold
 		for (int i = 0; i < k; i++) {
 			if (oneUserPrefs.get(i) != null) {
 				folds.get(i).put(userID, new GenericUserPreferenceArray(oneUserPrefs.get(i)));
 			}
 		}
 	}
-	
+
+	/**
+	 * Take one user preferences and distribute into the k folds randomly
+	 * 
+	 * @param userID
+	 * @param dataModel
+	 * @throws TasteException
+	 */
 	@SuppressWarnings("unused")
-	private void splitOneUsersPrefsRandom(long userID, DataModel dataModel)
-			throws TasteException {
+	private void splitOneUsersPrefsRandom(long userID, DataModel dataModel) throws TasteException {
 
 		List<List<Preference>> oneUserPrefs = new ArrayList<List<Preference>>(k);
 		for (int i = 0; i < k; i++)
@@ -222,11 +226,9 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 		// Shuffle the items
 		Collections.shuffle(shuffledPrefs, random);
 
+		// Assign each element in the permutation to a fold starting by the first
 		int currentBucket = 0;
 		for (int i = 0; i < prefs.length(); i++) {
-			if (currentBucket == k) {
-				currentBucket = 0;
-			}
 
 			Preference newPref = new GenericPreference(userID, shuffledPrefs.get(i).getItemID(),
 					shuffledPrefs.get(i).getValue());
@@ -235,9 +237,11 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 				oneUserPrefs.set(currentBucket, new ArrayList<Preference>());
 			}
 			oneUserPrefs.get(currentBucket).add(newPref);
-			currentBucket++;
+
+			currentBucket = (currentBucket + 1) % k;
 		}
 
+		// Assign each partition to its general fold
 		for (int i = 0; i < k; i++) {
 			if (oneUserPrefs.get(i) != null) {
 				folds.get(i).put(userID, new GenericUserPreferenceArray(oneUserPrefs.get(i)));
@@ -245,20 +249,21 @@ public abstract class AKFoldRecommenderEvaluator2 extends AbstractDifferenceReco
 		}
 
 	}
-	
-	private void getOrderedbyNPrefsSubjects() {
-		// Open database connection
-		Connection connection;
+
+	/**
+	 * Create a subjects list in descending order by the number of preferences each
+	 * one has
+	 * 
+	 * @param mm
+	 */
+	protected void setOrderedbyNPrefsSubjects(ModelManage mm) {
 		try {
-			connection = DriverManager.getConnection(CONNECTION, "root", "1234");
-			Statement s = connection.createStatement();
 			// Query of subject id and content
-			ResultSet rs = s.executeQuery(QUERY);
+			ResultSet rs = mm.getQuery(QUERY);
 			orderedSubjects = new ArrayList<Long>();
 			while (rs.next()) {
 				orderedSubjects.add(rs.getLong(1));
 			}
-			connection.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

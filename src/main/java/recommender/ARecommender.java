@@ -5,7 +5,6 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
 import util.ConfigLoader;
-import util.IConfiguration;
 import util.ModelManage;
 
 /**
@@ -60,9 +59,6 @@ public abstract class ARecommender implements IRecommender {
 		
 		// Load configuration of the model manager
 		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
-		mm = new ModelManage();
-		// Load the model manager
-		if (mm instanceof IConfiguration)
-			((IConfiguration) mm).configure(configDM.subset("model"));
+		mm = new ModelManage(configDM);
 	}
 }

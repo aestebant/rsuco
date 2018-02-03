@@ -2,8 +2,13 @@ package util;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -16,7 +21,6 @@ import org.apache.mahout.cf.taste.impl.model.GenericBooleanPrefDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericUserPreferenceArray;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
-import org.apache.mahout.cf.taste.impl.model.jdbc.ConnectionPoolDataSource;
 import org.apache.mahout.cf.taste.impl.model.jdbc.MySQLJDBCDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
@@ -33,10 +37,11 @@ public class ModelManage implements IConfiguration {
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private MysqlConnectionPoolDataSource dataSource;
+	private MysqlConnectionPoolDataSource ds;
+	private Connection connection;
 
-	// Information about server's connection and MySQL data base
-	private String server, user, pswd, db;
+	// Information about dburl's connection and MySQL data base
+	private String dburl, dbuser, dbpswd;
 
 	// Configuration of all possible models to load
 	private Configuration config;
@@ -44,33 +49,68 @@ public class ModelManage implements IConfiguration {
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
-	/**
-	 * Connect to a MySQL server
-	 */
-	public void connectMysql() {
-		dataSource = new MysqlConnectionPoolDataSource();
-		dataSource.setServerName(server);
-		dataSource.setUser(user);
-		dataSource.setPassword(pswd);
-		dataSource.setDatabaseName(db);
+	public ModelManage(Configuration config) {
+		configure(config);
+		createPool();
 	}
 
 	/**
-	 * Load a (boolean) model from a MySQL server
+	 * Connect to a MySQL server
+	 */
+	public void createPool() {
+		// Check driver
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+		} catch (Exception e) {
+			System.err.println("MySQL driver not found");
+			System.exit(-1);
+		}
+
+		ds = new MysqlConnectionPoolDataSource();
+		ds.setURL(dburl);
+		ds.setUser(dbuser);
+		ds.setPassword(dbpswd);
+
+		try {
+			connection = ds.getConnection(dbuser, dbpswd);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+	}
+
+	public ResultSet getQuery(String query) {
+		ResultSet rs = null;
+		try {
+			Statement s = connection.createStatement();
+			rs = s.executeQuery(query);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+
+		return rs;
+	}
+
+	/**
+	 * Load a (boolean) model from a MySQL database
 	 * 
 	 * @param key
 	 *            Key to locate the model in the Configuration file
 	 * @return the loaded data model
 	 */
 	public DataModel loadModel(String key) {
-		List<String> params = getParameters(key);
+		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
+		l.setLevel(org.apache.log4j.Level.ERROR);
+
+		Map<String, String> params = getParameters(key);
 
 		DataModel model = null;
 
 		// Load a data model from a file
-		if (params.size() == 1) {
+		if (params.containsKey("filename")) {
 			try {
-				model = new FileDataModel(new File(params.get(0)));
+				model = new FileDataModel(new File(params.get("filename")));
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(-1);
@@ -78,14 +118,14 @@ public class ModelManage implements IConfiguration {
 			return model;
 		}
 
-		if (dataSource == null)
-			connectMysql();
+		if (ds == null)
+			createPool();
 
 		// Load a boolean data model
-		if (params.get(3).equals("bool")) {
+		if (params.get("preference").equals("bool")) {
 			// Load the model without the preference column (a dump value)
-			model = new MySQLJDBCDataModel(new ConnectionPoolDataSource(dataSource), params.get(0), params.get(1),
-					params.get(2), params.get(1), null);
+			model = new MySQLJDBCDataModel(ds, params.get("table"), params.get("user"), params.get("item"),
+					params.get("item"), null);
 			// Transform the model to boolean
 			try {
 				model = new GenericBooleanPrefDataModel(GenericBooleanPrefDataModel.toDataMap(model));
@@ -96,8 +136,8 @@ public class ModelManage implements IConfiguration {
 		}
 		// Load a generic data model
 		else {
-			model = new MySQLJDBCDataModel(new ConnectionPoolDataSource(dataSource), params.get(0), params.get(1),
-					params.get(2), params.get(3), null);
+			model = new MySQLJDBCDataModel(ds, params.get("table"), params.get("user"), params.get("item"),
+					params.get("preference"), null);
 		}
 
 		return model;
@@ -109,12 +149,12 @@ public class ModelManage implements IConfiguration {
 	 * 
 	 * @param key
 	 *            identification of the data model in the configuration file
-	 * @return a list with the parameters of configuration: table, user column, item
-	 *         column...
+	 * @return map with necessary fields to load a model: table, user, item and
+	 *         preference columns...
 	 */
-	private List<String> getParameters(String key) {
+	private Map<String, String> getParameters(String key) {
 
-		List<String> params = new ArrayList<String>();
+		Map<String, String> params = new HashMap<String, String>();
 
 		String sourceType = config.getString(key + "[@type]");
 
@@ -125,14 +165,14 @@ public class ModelManage implements IConfiguration {
 
 		switch (sourceType) {
 		case "mysql":
-			params.add(config.getString(key + ".table"));
-			params.add(config.getString(key + ".user"));
-			params.add(config.getString(key + ".item"));
-			params.add(config.getString(key + ".preference"));
+			String[] fields = { "table", "user", "item", "preference" };
+			for (String f : fields) {
+				params.put(f, config.getString(key + "." + f));
+			}
 			break;
 
 		case "file":
-			params.add(config.getString(key + ".filename"));
+			params.put("filename", config.getString(key + ".filename"));
 			break;
 
 		default:
@@ -142,7 +182,7 @@ public class ModelManage implements IConfiguration {
 		}
 		return params;
 	}
-	
+
 	/**
 	 * Filter a data model removing users and items that don't appear in another
 	 * data model of reference
@@ -155,7 +195,7 @@ public class ModelManage implements IConfiguration {
 	 * @throws TasteException
 	 */
 	public DataModel filterModel(DataModel origin, DataModel reference) {
-		
+
 		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
 		l.setLevel(org.apache.log4j.Level.WARN);
 
@@ -203,13 +243,13 @@ public class ModelManage implements IConfiguration {
 	 * @return normalized model
 	 */
 	public DataModel subtractiveNormalization(DataModel model) {
-		
+
 		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
 		l.setLevel(org.apache.log4j.Level.WARN);
-		
+
 		// Weight of each average in the normalization
 		double wAvgAll = 1. / 3, wAvgUser = 1. / 3, wAvgItem = 1. / 3;
-		
+
 		int nUsers = 0;
 		int nItems = 0;
 		try {
@@ -333,22 +373,21 @@ public class ModelManage implements IConfiguration {
 	}
 
 	/**
-	 * Configure parameters of the MySQL server where data models are allocated
+	 * Configure parameters of the MySQL database where data models are allocated
 	 * 
 	 * @param config
 	 *            Configuration file name (used to be Model.xml)
 	 */
 	@Override
 	public void configure(Configuration config) {
-		this.config = config;
+		this.config = config.subset("model");
 
-		String sourceType = config.getString("source[@type]");
+		String sourceType = this.config.getString("source[@type]");
 		switch (sourceType) {
 		case "mysql":
-			server = config.getString("source.server");
-			user = config.getString("source.user");
-			pswd = config.getString("source.password");
-			db = config.getString("source.database");
+			dburl = this.config.getString("source.url");
+			dbuser = this.config.getString("source.user");
+			dbpswd = this.config.getString("source.password");
 			break;
 
 		default:

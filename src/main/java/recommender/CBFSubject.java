@@ -53,7 +53,7 @@ public class CBFSubject extends ARecommender {
 		// Standard configuration
 		super.configure(config);
 
-		contents = new ContentSubjectManage();
+		contents = new ContentSubjectManage(mm);
 		// Load data model that relate subjects with teachers
 		teaching = mm.loadModel("teaching");
 		

@@ -28,10 +28,7 @@ class RunEval {
 		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
 
 		// Load model management
-		ModelManage mm = new ModelManage();
-		// Configure the ModelManage
-		if (mm instanceof IConfiguration)
-			((IConfiguration) mm).configure(configDM.subset("model"));
+		ModelManage mm = new ModelManage(configDM);
 
 		DataModel model = mm.loadModel("ratings");
 		
@@ -39,7 +36,7 @@ class RunEval {
 		if (evaluator instanceof IConfiguration)
 			((IConfiguration) evaluator).configure(config.subset("evaluator"));
 			
-		Map<String, Double> results = evaluator.execute(model);
+		Map<String, Double> results = evaluator.execute(model, mm);
 		
 		System.out.println("Configuration tested: " + config.getString("evaluator.recommender"));
 		
