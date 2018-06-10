@@ -17,9 +17,6 @@ import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
-import com.google.common.base.Preconditions;
-
-import util.ConfigLoader;
 
 /**
  * Recommender that combine both information of students and of subjects,
@@ -27,12 +24,12 @@ import util.ConfigLoader;
  * 
  * @author aurora
  */
-public class CBFStudentSubject extends ARecommender {
+public class HFStudentSubject extends ARecommender {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private CBFStudent userReco;
+	private CFStudent userReco;
 	private CBFSubject itemReco;
 
 	private float wUserReco;
@@ -45,8 +42,6 @@ public class CBFStudentSubject extends ARecommender {
 	 */
 	@Override
 	public void execute(DataModel model) {
-		Preconditions.checkArgument(wUserReco >= 0 && wUserReco <= 1,
-				"User recommender weight must be between 0 and 1");
 
 		userReco.execute(model);
 		itemReco.execute(model);
@@ -153,16 +148,19 @@ public class CBFStudentSubject extends ARecommender {
 		// Standard configuration
 		super.configure(config);
 
-		String configSt = config.getString("pathStudentConfig");
-		String configSu = config.getString("pathSubjectConfig");
 		wUserReco = config.getFloat("studentWeight");
+		
+		if (wUserReco < 0.0 || wUserReco > 1.0) {
+			System.err.println("Student weight in HFStudentSubject must be in [0,1] (current " + wUserReco + ")");
+			System.exit(-1);
+		}
 
 		// Student content based recommender
-		userReco = new CBFStudent();
-		userReco.configure(ConfigLoader.XMLFile(configSt).subset("recommender"));
-
+		userReco = new CFStudent();
 		// Subject content based recommender
 		itemReco = new CBFSubject();
-		itemReco.configure(ConfigLoader.XMLFile(configSu).subset("recommender"));
+		
+		userReco.configure(config.subset("cfstudent"));
+		itemReco.configure(config.subset("cbfsubject"));
 	}
 }

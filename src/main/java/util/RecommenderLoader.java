@@ -25,7 +25,7 @@ public class RecommenderLoader {
 	 * @return the IRecommender created
 	 */
 	@SuppressWarnings("unchecked")
-	public static IRecommender instantiate(Configuration config) {
+	public static IRecommender instantiate(Configuration config, ModelManage mm) {
 		// Get the name of the class of the IRecommender
 		Class<? extends IRecommender> recoClass = null;
 		try {
@@ -42,6 +42,9 @@ public class RecommenderLoader {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		
+		recommender.setModelManage(mm);
+		
 		// Configure the recommender
 		if (recommender instanceof IConfiguration) {
 			((IConfiguration) recommender).configure(config.subset("recommender"));

@@ -1,0 +1,15 @@
+<configuration>
+	<recommender name = 'recommender.HFStudentSubject'>
+	<cfstudent>
+		<normalize>false</normalize>
+		<neighborhood>
+			<option>1</option>
+		</neighborhood>
+	</cfstudent>
+	<cbfsubject>
+		<similarity>
+			<documentaryDB>documentaryDB</documentaryDB>
+		</similarity>
+	</cbfsubject>
+	</recommender>
+</configuration>

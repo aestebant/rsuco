@@ -1,5 +1,7 @@
 package core;
 
+import java.io.File;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -9,7 +11,6 @@ import com.google.common.base.Preconditions;
 
 import recommender.IRecommender;
 import util.ConfigLoader;
-import util.IConfiguration;
 import util.ModelManage;
 import util.RecommenderLoader;
 
@@ -23,28 +24,22 @@ class Run {
 	static long userID = -1;
 
 	public static void main(String[] args) {
-		Preconditions.checkArgument(args.length == 1, "Must set a configuration file");
-
-		// By default, the log level of Mahout evaluator is INFO
-		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
-		l.setLevel(org.apache.log4j.Level.WARN);
-
-		// Load recommender configuration
-		Configuration configReco = ConfigLoader.XMLFile(args[0]);
-
-		// Instantiate the recommender
-		IRecommender recommender = RecommenderLoader.instantiate(configReco);
+		Preconditions.checkArgument(args.length == 2, "Use: <bd configuration.xml> <rs configuration.xml>");
 
 		// Load data model configuration
-		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
+		Configuration configDM = ConfigLoader.XMLFile(new File(args[0]));
+		
+		// Load recommender configuration
+		Configuration configReco = ConfigLoader.XMLFile(new File(args[1]));
 
 		// Load model management
-		ModelManage mm = new ModelManage();
-		// Configure the ModelManage
-		if (mm instanceof IConfiguration)
-			((IConfiguration) mm).configure(configDM.subset("model"));
+		ModelManage mm = new ModelManage(configDM);
+		
+		// Instantiate the recommender
+		IRecommender recommender = RecommenderLoader.instantiate(configReco, mm);
 		
 		DataModel model = mm.loadModel("ratings");
+		
 		recommender.execute(model);
 
 		System.out.println("User | Recommendations");
@@ -57,8 +52,8 @@ class Run {
 					System.out.println(id + " --> " + recommender.getRecommender().recommend(id, nRecommendations));
 				}
 			} catch (TasteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
+				System.exit(-1);
 			}
 		}
 		else {
@@ -69,6 +64,5 @@ class Run {
 				e.printStackTrace();
 			}
 		}
-
 	}
 }

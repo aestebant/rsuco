@@ -1,46 +1,51 @@
 package core;
 
-import java.util.Map;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
 
 import com.google.common.base.Preconditions;
 
-import evaluator.Evaluator;
+import evaluator.IEvaluator;
+import evaluator.SplitEvaluator;
 import util.ConfigLoader;
 import util.IConfiguration;
 import util.ModelManage;
 
-/**
- * Evaluate a recommender configuration showing MAE, RMSE, precision and recall
- * @author Aurora Esteban Toscano
- */
-class RunEval {
-	
+public class RunEval {
+
 	public static void main(String[] args) {
-		Preconditions.checkArgument(args.length == 1, "Must set a configuration file");
-		
-		// Load recommender configuration
-		Configuration config = ConfigLoader.XMLFile(args[0]);
+		Preconditions.checkArgument(args.length == 3, "Use: <DB configuration.xml> <Evaluation configuration.xml> <RS configuration.xml>");
 		
 		// Load data model configuration
-		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
-
+		Configuration configDM = ConfigLoader.XMLFile(new File(args[0]));
+		
 		// Load model management
 		ModelManage mm = new ModelManage(configDM);
+		
+		// Load evaluation configuration
+		Configuration config = ConfigLoader.XMLFile(new File(args[1]));
 
 		DataModel model = mm.loadModel("ratings");
+		IEvaluator eval = new SplitEvaluator();
+		//IEvaluator eval = new KFoldEvaluator();
+		if (eval instanceof IConfiguration)
+			((IConfiguration) eval).configure(config.subset("evaluator"));
 		
-		Evaluator evaluator = new Evaluator(13);
-		if (evaluator instanceof IConfiguration)
-			((IConfiguration) evaluator).configure(config.subset("evaluator"));
-			
-		Map<String, Double> results = evaluator.execute(model, mm);
+		eval.setRecommenderBuilder(new File(args[2]), mm);
+		eval.setDataModel(model);
 		
-		System.out.println("Configuration tested: " + config.getString("evaluator.recommender"));
+		eval.setOrderedbyNPrefsSubjects(mm);
+		//eval.execute();
+		List<Long> seeds = new ArrayList<>(5);
+		seeds.add(10L);
+		seeds.add(20L);
+		seeds.add(30L);
 		
-		for (String key : results.keySet())
-			System.out.println(key + "-> " + results.get(key));
+		eval.execute(seeds);
 	}
+
 }

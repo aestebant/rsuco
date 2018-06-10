@@ -1,6 +1,6 @@
 <configuration>
 	<recommender name = 'recommender.CFUser'>
-		<normalize>true</normalize>
+		<normalize>false</normalize>
 		<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
 		SpearmanCorrelationSimilarity / UncenteredCosineSimilarity -->
 		<similarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</similarity>

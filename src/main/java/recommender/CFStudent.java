@@ -6,28 +6,31 @@ import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.neighborhood.ThresholdUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.CachingRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
+import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
 import util.IConfiguration;
 
 /**
  * Content based recommender for students: hybrid similarity with ratings,
- * scores and specialty
+ * grades and specialty
  * 
  * @author Aurora Esteban Toscano
  */
-public class CBFStudent extends ARecommender implements IConfiguration {
+public class CFStudent extends ARecommender implements IConfiguration {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
 
 	// Scores related to users and their preferences
-	private DataModel scores;
-	private DataModel specialties;
+	private DataModel grades = null;
+	private DataModel branches = null;
 
-	private StudentSimilarity similarity;
+	private UserSimilarity similarity;
+	private Configuration configSim;
 
 	private UserNeighborhood neighborhood;
 	private int neighOpt;
@@ -44,14 +47,11 @@ public class CBFStudent extends ARecommender implements IConfiguration {
 	public void execute(DataModel model) {
 		super.execute(model);
 		
-		DataModel filterScores = mm.filterModel(scores,model);
-		if (normalize)
-			filterScores = mm.subtractiveNormalization(filterScores);
-				
-		// Hybrid similarity with all the data
-		similarity.execute(normModel, filterScores, specialties);
-
 		try {
+			// Hybrid similarity with all the data
+			similarity = new CachingUserSimilarity(new StudentSimilarity(normModel, grades, branches, configSim), model);
+			
+			log.info("Creating neighborhood");
 			switch (neighOpt) {
 			case 1:
 				this.neighborhood = new CachingUserNeighborhood(new NearestNUserNeighborhood(neighSize, similarity, normModel), normModel);
@@ -65,8 +65,10 @@ public class CBFStudent extends ARecommender implements IConfiguration {
 				System.err.println("Neighborhood option does not exists");
 				System.exit(1);
 			}
-
+			
+			log.info("Launching recommender");
 			recommender = new CachingRecommender(new GenericUserBasedRecommender(model, neighborhood, similarity));
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -80,9 +82,25 @@ public class CBFStudent extends ARecommender implements IConfiguration {
 		// Standard configuration
 		super.configure(config);
 		
-		// Load scores and specialties of the users given by ratings
-		scores = mm.loadModel("scores");		
-		specialties = mm.loadModel("specialties");
+		log.info("Loading specific CFStudent configuration");
+		
+		// Load grades and branches of the users given by ratings
+		Double useGrades = config.getDouble("similarity.gradesWeight");
+		if (useGrades > 0.0) {
+			log.info("Loading grades data model");
+			grades = mm.loadModel("grades");
+			
+			if (normalize) {
+				log.info("Normalizing grades");
+				grades = mm.subtractiveNormalization(grades);
+			}
+		}
+		
+		Double useBranch = config.getDouble("similarity.branchWeight");
+		if (useBranch > 0.0) {
+			log.info("Loading branches data model");
+			branches = mm.loadModel("branches");
+		}
 		
 		this.neighOpt = config.getInt("neighborhood.option");
 		if (neighOpt == 1)
@@ -90,10 +108,7 @@ public class CBFStudent extends ARecommender implements IConfiguration {
 		else if (neighOpt == 2)
 			this.neighThres = config.getDouble("neighborhood.threshold");
 		
-		similarity = new StudentSimilarity();
-		similarity.configure(config.subset("similarity"));
-		
-		
+		configSim = config.subset("similarity");
 	}
 
 }

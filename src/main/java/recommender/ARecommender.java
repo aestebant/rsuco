@@ -3,8 +3,11 @@ package recommender;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import util.ConfigLoader;
+import com.google.common.base.Preconditions;
+
 import util.ModelManage;
 
 /**
@@ -19,10 +22,12 @@ public abstract class ARecommender implements IRecommender {
 	/////////////////////////////////////////////
 	// Default implementation of a recommender
 	protected Recommender recommender;
-	protected ModelManage mm;
+	protected static ModelManage mm = null;
 	
 	protected Boolean normalize;
 	protected DataModel normModel;
+	
+	protected static final Logger log = LoggerFactory.getLogger(ARecommender.class);
 	
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
@@ -31,10 +36,17 @@ public abstract class ARecommender implements IRecommender {
 	 * Before apply recommender specific logic, normalize the ratings
 	 */
 	public void execute(DataModel model) {
-		if (normalize)
+		Preconditions.checkNotNull(mm, "ModelManage not inicializated");
+		log.info("Recommender execution starting");
+		
+		if (normalize) {
+			log.info("Normalizing ratings");
 			normModel = mm.subtractiveNormalization(model);
+			
+		}
 		else
 			normModel = model;
+		
 	}
 	
 	/**
@@ -50,15 +62,24 @@ public abstract class ARecommender implements IRecommender {
 			return recommender;
 	}
 
+	public void setModelManage(ModelManage mm) {
+		ARecommender.mm = mm;
+	}
+	
 	/**
 	 * @see util.IConfiguration#configure(Configuration)
 	 */
 	@Override
 	public void configure(Configuration config) {
+		log.info("Loading general recommender configuration");
+		
 		normalize = config.getBoolean("normalize",false);
 		
-		// Load configuration of the model manager
+		/*// Load configuration of the model manager
 		Configuration configDM = ConfigLoader.XMLFile("configuration/Model.xml");
-		mm = new ModelManage(configDM);
+		if (mm == null) {
+			mm = new ModelManage(configDM);
+			log.info("ModelManage inizializated");
+		}*/
 	}
 }

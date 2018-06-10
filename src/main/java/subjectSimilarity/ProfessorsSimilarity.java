@@ -12,6 +12,8 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import util.IConfiguration;
 
@@ -20,19 +22,20 @@ import util.IConfiguration;
  * 
  * @author Aurora Esteban Toscano
  */
-public class TeachingSimilarity implements ItemSimilarity, IConfiguration {
+public class ProfessorsSimilarity implements ItemSimilarity, IConfiguration {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private DataModel teaching;
+	private DataModel professors;
 
-	private UserSimilarity teachingSim;
-	private Class<? extends UserSimilarity> iTeachingSim;
+	private UserSimilarity professorsSim;
+	private Class<? extends UserSimilarity> iProfessorsSim;
 
 	// Threshold to consider two subjects similar
 	private static final double THRESHOLD = 0.3;
-	private static final String CONFIGLABEL = "teachingSimilarity";
+	
+	protected static final Logger log = LoggerFactory.getLogger(ProfessorsSimilarity.class);
 
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
@@ -40,17 +43,17 @@ public class TeachingSimilarity implements ItemSimilarity, IConfiguration {
 	/**
 	 * Initialize data model and similarity metric
 	 * 
-	 * @param teaching
+	 * @param professors
 	 * @param config
 	 */
-	public TeachingSimilarity(DataModel teaching, Configuration config) {
+	public ProfessorsSimilarity(DataModel professors, Configuration config) {
 		configure(config);
 
-		this.teaching = teaching;
+		this.professors = professors;
 
 		try {
-			this.teachingSim = new CachingUserSimilarity(
-					iTeachingSim.getDeclaredConstructor(DataModel.class).newInstance(this.teaching), this.teaching);
+			this.professorsSim = new CachingUserSimilarity(
+					iProfessorsSim.getDeclaredConstructor(DataModel.class).newInstance(this.professors), this.professors);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException | TasteException e) {
 			e.printStackTrace();
@@ -73,17 +76,19 @@ public class TeachingSimilarity implements ItemSimilarity, IConfiguration {
 	 */
 	@Override
 	public double itemSimilarity(long subject1, long subject2) throws TasteException {
-		double similarity = teachingSim.userSimilarity(subject1, subject2);
+		double similarity = professorsSim.userSimilarity(subject1, subject2);
 		if (Double.isNaN(similarity))
 			similarity = 0.0;
 
+		//log.info("Similarity between {} and {} computed = {}", subject1, subject2, similarity);
+		
 		return similarity;
 	}
 
 	@Override
 	public long[] allSimilarItemIDs(long subject) throws TasteException {
 		FastIDSet similars = new FastIDSet();
-		LongPrimitiveIterator allSubjects = teaching.getUserIDs();
+		LongPrimitiveIterator allSubjects = professors.getUserIDs();
 
 		while (allSubjects.hasNext()) {
 			long possiblySimilar = allSubjects.nextLong();
@@ -102,7 +107,7 @@ public class TeachingSimilarity implements ItemSimilarity, IConfiguration {
 	@Override
 	public void configure(Configuration config) {
 		try {
-			this.iTeachingSim = (Class<? extends UserSimilarity>) Class.forName(config.getString(CONFIGLABEL));
+			this.iProfessorsSim = (Class<? extends UserSimilarity>) Class.forName(config.getString("professorsSimilarity"));
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}

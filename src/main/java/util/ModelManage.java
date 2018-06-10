@@ -2,13 +2,11 @@ package util;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -21,7 +19,6 @@ import org.apache.mahout.cf.taste.impl.model.GenericBooleanPrefDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericUserPreferenceArray;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
-import org.apache.mahout.cf.taste.impl.model.jdbc.MySQLJDBCDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 
@@ -37,8 +34,7 @@ public class ModelManage implements IConfiguration {
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private MysqlConnectionPoolDataSource ds;
-	private Connection connection;
+	private static MysqlConnectionPoolDataSource ds;
 
 	// Information about dburl's connection and MySQL data base
 	private String dburl, dbuser, dbpswd;
@@ -70,26 +66,10 @@ public class ModelManage implements IConfiguration {
 		ds.setURL(dburl);
 		ds.setUser(dbuser);
 		ds.setPassword(dbpswd);
-
-		try {
-			connection = ds.getConnection(dbuser, dbpswd);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
 	}
-
-	public ResultSet getQuery(String query) {
-		ResultSet rs = null;
-		try {
-			Statement s = connection.createStatement();
-			rs = s.executeQuery(query);
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-
-		return rs;
+	
+	public DataSource getDataSource() {
+		return ds;
 	}
 
 	/**
@@ -100,8 +80,8 @@ public class ModelManage implements IConfiguration {
 	 * @return the loaded data model
 	 */
 	public DataModel loadModel(String key) {
-		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
-		l.setLevel(org.apache.log4j.Level.ERROR);
+		//org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
+		//l.setLevel(org.apache.log4j.Level.ERROR);
 
 		Map<String, String> params = getParameters(key);
 
@@ -117,9 +97,6 @@ public class ModelManage implements IConfiguration {
 			}
 			return model;
 		}
-
-		if (ds == null)
-			createPool();
 
 		// Load a boolean data model
 		if (params.get("preference").equals("bool")) {
@@ -196,8 +173,8 @@ public class ModelManage implements IConfiguration {
 	 */
 	public DataModel filterModel(DataModel origin, DataModel reference) {
 
-		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
-		l.setLevel(org.apache.log4j.Level.WARN);
+		//org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
+		//l.setLevel(org.apache.log4j.Level.WARN);
 
 		FastByIDMap<PreferenceArray> preferences = new FastByIDMap<PreferenceArray>();
 
@@ -243,9 +220,6 @@ public class ModelManage implements IConfiguration {
 	 * @return normalized model
 	 */
 	public DataModel subtractiveNormalization(DataModel model) {
-
-		org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
-		l.setLevel(org.apache.log4j.Level.WARN);
 
 		// Weight of each average in the normalization
 		double wAvgAll = 1. / 3, wAvgUser = 1. / 3, wAvgItem = 1. / 3;

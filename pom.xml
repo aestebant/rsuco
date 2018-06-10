@@ -15,6 +15,7 @@
 		<mahout.groupid>org.apache.mahout</mahout.groupid>
 		<lucene.version>7.2.0</lucene.version>
 		<lucene.groupid>org.apache.lucene</lucene.groupid>
+		<jdk.version>1.8</jdk.version>
 	</properties>
 
 	<dependencies>
@@ -29,14 +30,14 @@
 			<version>1.9.3</version>
 		</dependency>
 		<dependency>
-		    <groupId>commons-pool</groupId>
-		    <artifactId>commons-pool</artifactId>
-		    <version>1.6</version>
+			<groupId>commons-pool</groupId>
+			<artifactId>commons-pool</artifactId>
+			<version>1.6</version>
 		</dependency>
 		<dependency>
-		    <groupId>commons-dbcp</groupId>
-		    <artifactId>commons-dbcp</artifactId>
-		    <version>1.4</version>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -85,9 +86,9 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/log4j/log4j -->
 		<dependency>
-		    <groupId>log4j</groupId>
-		    <artifactId>log4j</artifactId>
-		    <version>1.2.17</version>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
 		</dependency>
 		<dependency>
 			<groupId>${lucene.groupid}</groupId>
@@ -102,12 +103,114 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-analyzers-common -->
 		<dependency>
+			<groupId>${lucene.groupid}</groupId>
+			<artifactId>lucene-analyzers-common</artifactId>
+			<version>${lucene.version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-queryparser -->
+		<dependency>
 		    <groupId>${lucene.groupid}</groupId>
-		    <artifactId>lucene-analyzers-common</artifactId>
+		    <artifactId>lucene-queryparser</artifactId>
 		    <version>${lucene.version}</version>
 		</dependency>
-				
 	</dependencies>
-	
-	<description>Algorithm for recommendation of subjects of Computer Engineering Degree of University of Córdoba</description>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.7.0</version>
+				<configuration>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+					<!-- <includes>
+						<include>evaluator/*</include>
+						<include>recommender/*</include>
+						<include>subjectSimilarity/*</include>
+						<include>util/*</include>
+					</includes> 
+					<excludes>
+						<exclude>evaluator/GenericRecommenderIRStatsEvaluator.java</exclude>
+						<exclude>evaluator/IREvaluator.java</exclude>
+						<exclude>evaluator/IRStatisticsImpl.java</exclude>
+						<exclude>evaluator/KFoldEvaluator.java</exclude>
+					</excludes>
+					<includes>
+						<include>core/RunApp.java</include>
+						<include>recommender/*</include>
+						<include>subjectSimilarity/*</include>
+						<include>util/*</include> 
+					</includes> -->
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>core.RunApp</mainClass>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>dependency-jars/</classpathPrefix>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.5.1</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeScope>runtime</includeScope>
+							<outputDirectory>${project.build.directory}/dependency-jars/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!--<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.5</version>
+				<executions>
+					<execution>
+						<id>custom-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/target/configuration</outputDirectory>
+							<resources>
+								<resource>
+									<directory>configuration</directory>
+									<includes>
+										<include>CFUser.xml</include>
+										<include>CFStudent.xml</include>
+										<include>CBFSubject.xml</include>
+										<include>HFStudentSubject.xml</include>
+										<include>MatrixFactorization.xml</include>
+										<include>stopWords.txt</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin> -->
+		</plugins>
+	</build> 
+
+	<description>Library for making course recommendations based in multiple criteria</description>
 </project>

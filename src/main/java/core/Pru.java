@@ -1,28 +1,33 @@
 package core;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import util.ContentSubjectManage;
-import util.CosineDocumentSimilarity;
+import evaluator.WrappedHFEval;
 
 public class Pru {
-
-	/*public static void main(String[] args) {
-		Path p1 = Paths.get("../pru1.txt");
-		Path p2 = Paths.get("../pru2.txt");
-		try {
-			CosineDocumentSimilarity cds = new CosineDocumentSimilarity(p1, p2);
-			System.out.println(cds.getCosineSimilarity());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}*/
 	
 	public static void main(String[] args) {
-		ContentSubjectManage manager = new ContentSubjectManage();
+		WrappedHFEval eval = new WrappedHFEval();
+		
+		eval.setStudentWeight(0.5);
+		
+		eval.setRatingsWeight(0.5);
+		eval.setGradesWeight(0.4);
+		eval.setBranchWeight(0.1);
+		
+		eval.setRatingsSim("org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity");
+		eval.setGradesSim("org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity");
+		
+		eval.setNeighborhood(15);
+		
+		eval.setProfessorsWeight(0.25);
+		eval.setAreaWeight(0.25);
+		eval.setCompetencesWeight(0.25);
+		eval.setContentWeight(0.25);
+		
+		eval.setCompetencesSim("org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity");
+		eval.setProfessorsSim("org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity");
+		
+		double rmse = eval.execute();
+		System.out.println(rmse);
 	}
 
 }

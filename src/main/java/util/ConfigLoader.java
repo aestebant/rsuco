@@ -1,5 +1,7 @@
 package util;
 
+import java.io.File;
+
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
@@ -29,14 +31,15 @@ public class ConfigLoader {
 	 * @param inputPath
 	 *            inputPath of the file with the configuration to load
 	 */
-	public static Configuration XMLFile(String path) {
+	public static Configuration XMLFile(File path) {
+		
 		Parameters params = new Parameters();
 		
 		XMLBuilderParameters px = params.xml();
 		
 		FileBasedConfigurationBuilder<XMLConfiguration> builder = new FileBasedConfigurationBuilder<XMLConfiguration>(
 				XMLConfiguration.class);
-		builder.configure(px.setFileName(path));
+		builder.configure(px.setFile(path));
 		
 		try {
 			configuration = builder.getConfiguration();

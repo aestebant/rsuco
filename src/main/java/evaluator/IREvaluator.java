@@ -9,8 +9,8 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
 import recommender.IRecommender;
-import util.ConfigLoader;
 import util.IConfiguration;
+import util.ModelManage;
 import util.RecommenderLoader;
 
 /**
@@ -61,9 +61,9 @@ public class IREvaluator implements IConfiguration {
 	 * @param evalConf
 	 *            Configuration of the recommender
 	 */
-	public void setRecommenderBuilder(Configuration recommenderConf) {
+	public void setRecommenderBuilder(Configuration recommenderConf, ModelManage mm) {
 		// Instantiate the recommender
-		IRecommender recommender = RecommenderLoader.instantiate(recommenderConf);
+		final IRecommender recommender = RecommenderLoader.instantiate(recommenderConf, mm);
 
 		recommenderBuilder = new RecommenderBuilder() {
 			@Override
@@ -106,10 +106,10 @@ public class IREvaluator implements IConfiguration {
 		// must be random.
 		seed = config.getLong("seed", -1);
 
-		String confPathRecommender = config.getString("recommender");
+		/*String confPathRecommender = config.getString("recommender");
 		Configuration recommenderConf = ConfigLoader.XMLFile(confPathRecommender);
 
 		// Instantiate recommender
-		setRecommenderBuilder(recommenderConf);
+		setRecommenderBuilder(recommenderConf);*/
 	}
 }

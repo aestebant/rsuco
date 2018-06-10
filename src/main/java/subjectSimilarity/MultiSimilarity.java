@@ -1,16 +1,28 @@
 package subjectSimilarity;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.similarity.CachingItemSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import util.ContentSubjectManage;
+import com.google.common.collect.Lists;
+
 import util.IConfiguration;
 
 /**
@@ -24,28 +36,26 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private DataModel teaching;
+	private static ThreadLocal<DataModel> professors = new ThreadLocal<>();
 
 	// Single criteria similarities
-	private TeachingSimilarity teachingSim;
-	private DepartmentSimilarity departmentSim;
-	private SkillSimilarity skillSim;
-	private ContentSimilarity contentSim;
+	private static ItemSimilarity professorsSim;
+	private static ItemSimilarity areaSim;
+	private static ItemSimilarity competencesSim;
+	private static ItemSimilarity contentSim;
 
 	// Importance of each criteria in final similarity in [0,1]
-	private double wTeaching;
-	private double wDepartment;
-	private double wSkill;
+	private double wProfessors;
+	private double wArea;
+	private double wCompetences;
 	private double wContent;
 
 	// Threshold to consider two subjects similar
 	private static final double THRESHOLD = 0.3;
-
-	// Labels to use in experiment configuration files
-	private static final String WTEACHINGLABEL = "teachingWeight";
-	private static final String WDEPARTMENTLABEL = "departmentWeight";
-	private static final String WSKILLLABEL = "skillWeight";
-	private static final String WCONTENTLABEL = "contentWeight";
+	
+	private final FastByIDMap<FastByIDMap<Double>> similarityMaps = new FastByIDMap<>();
+	
+	protected static final Logger log = LoggerFactory.getLogger(MultiSimilarity.class);
 
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
@@ -53,25 +63,94 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 	/**
 	 * Initialize single criteria similarities
 	 */
-	public MultiSimilarity(DataModel teaching, DataModel departments, DataModel skills, ContentSubjectManage contents,
-			Configuration config) {
+	public MultiSimilarity(DataModel professors, DataModel departments, DataModel competences, Configuration config) {
 		configure(config);
-
-		teachingSim = new TeachingSimilarity(teaching, config);
-		skillSim = new SkillSimilarity(skills, config);
-		departmentSim = new DepartmentSimilarity(departments);
-		contentSim = new ContentSimilarity(contents);
-
-		this.teaching = teaching;
+		
+		MultiSimilarity.professors.set(professors);
+		
+		try {
+			if (wProfessors > 0.0)
+				professorsSim = new CachingItemSimilarity(new ProfessorsSimilarity(professors, config), professors);
+			if (wCompetences > 0.0)
+				competencesSim = new CachingItemSimilarity(new CompetencesSimilarity(competences, config), competences);
+			if (wArea > 0.0)
+				areaSim = new CachingItemSimilarity(new AreaSimilarity(departments), departments);
+		} catch (TasteException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		if (wContent > 0.0)
+			contentSim = new ContentSimilarity(config);
+		
+		log.info("Computing similarity based on subjects");
+		computeFinalSimilarities();
 	}
 
-	@Override
-	public double[] itemSimilarities(long subject1, long[] others) throws TasteException {
-		double[] result = new double[others.length];
-		for (int i = 0; i < others.length; i++) {
-			result[i] = itemSimilarity(subject1, others[i]);
+	void computeFinalSimilarities() {
+		LongPrimitiveIterator subjects = null;
+		try {
+			subjects = professors.get().getUserIDs();
+		} catch (TasteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		return result;
+		
+		class Wrapper implements Callable<Double[]> {
+			long subject1, subject2;
+
+			public Wrapper(long sb1, long sb2) {
+				this.subject1 = sb1;
+				this.subject2 = sb2;
+			}
+			
+			@Override
+			public Double[] call() throws Exception {
+				Double[] result = {(double) subject2, computeSimilarity(subject1, subject2)};
+				return result;
+			}
+		};
+		
+		int count = 1;
+		while (subjects.hasNext()) {
+			long subject1 = subjects.nextLong();
+			LongPrimitiveIterator others = null;
+			try {
+				others = professors.get().getUserIDs();
+			} catch (TasteException e) {
+				e.printStackTrace();
+			}
+			others.skip(count);
+			FastByIDMap<Double> map = new FastByIDMap<>();
+			
+			ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+			Collection<Callable<Double[]>> collection = Lists.newArrayList();
+			
+			while (others.hasNext()) {
+				long subject2 = others.next();
+				collection.add(new Wrapper(subject1, subject2));
+				//map.put(subject2, executor.submit(new Wrapper(subject1, subject2)));
+			}
+			
+			try {
+				List<Future<Double[]>> futures = executor.invokeAll(collection);
+				for (Future<Double[]> future : futures) {
+					Double[] result = future.get();
+					map.put(result[0].longValue(), result[1]);
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				e.printStackTrace();
+			}
+			executor.shutdown();
+			try {
+				executor.awaitTermination(5, TimeUnit.MINUTES);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			similarityMaps.put(subject1, map);
+			count ++;
+		}
 	}
 
 	/**
@@ -80,26 +159,65 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 	 * 
 	 * @throws TasteException
 	 */
+	public double computeSimilarity(long subject1, long subject2) {
+		double sim1 = 0.0, sim2 = 0.0, sim3 = 0.0, sim4 = 0.0;
+		try {
+			if (wProfessors > 0.0)
+				sim1 = professorsSim.itemSimilarity(subject1, subject2);
+			if (wContent > 0.0)
+				sim2 = contentSim.itemSimilarity(subject1, subject2);
+			if (wArea > 0.0)
+				sim3 = areaSim.itemSimilarity(subject1, subject2);
+			if (wCompetences > 0.0)
+				sim4 = competencesSim.itemSimilarity(subject1, subject2);
+		} catch (TasteException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		double similarity = wProfessors * sim1 + wContent * sim2 + wArea * sim3 + wCompetences * sim4;
+		if (similarity > 1.0)
+			similarity = 1.0;
+		if (similarity < -1.0)
+			similarity = -1.0;
+		
+		//log.info("Similarity between {} and {} computed = {}", subject1, subject2, similarity);
+		
+		return similarity;
+	}
+	
 	@Override
 	public double itemSimilarity(long subject1, long subject2) throws TasteException {
-		double sim1 = teachingSim.itemSimilarity(subject1, subject2);
-		double sim2 = contentSim.itemSimilarity(subject1, subject2);
-		double sim3 = departmentSim.itemSimilarity(subject1, subject2);
-		double sim4 = skillSim.itemSimilarity(subject1, subject2);
-
-		return wTeaching * sim1 + wContent * sim2 + wDepartment * sim3 + wSkill * sim4;
+		
+		if (subject1 < subject2)
+			return similarityMaps.get(subject1).get(subject2);
+		else if (subject2 < subject1)
+			return similarityMaps.get(subject2).get(subject1);
+		return 1.0;
 	}
 
 	@Override
+	public double[] itemSimilarities(long subject, long[] others) throws TasteException {
+		double[] result = new double[others.length];
+		for (int i = 0; i < others.length; i++) {
+			result[i] = itemSimilarity(subject, others[i]);
+			//log.info("{} similar to {} (score {})", subject, others[i], result[i]);
+		}
+		return result;
+	}
+	
+	@Override
 	public long[] allSimilarItemIDs(long subject) throws TasteException {
 		FastIDSet similars = new FastIDSet();
-		LongPrimitiveIterator allSubjects = teaching.getUserIDs();
+		LongPrimitiveIterator allSubjects = professors.get().getUserIDs();
 
 		while (allSubjects.hasNext()) {
 			long possiblySimilar = allSubjects.nextLong();
 			double score = itemSimilarity(subject, possiblySimilar);
-			if (score > THRESHOLD)
+			if (score > THRESHOLD) {
 				similars.add(possiblySimilar);
+				//log.info("{} similar to {} (score {})", subject, possiblySimilar, score);
+			}
 		}
 		return similars.toArray();
 	}
@@ -109,17 +227,16 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 	}
 
 	@Override
-	public void configure(Configuration config) {
-		this.wTeaching = config.getDouble(WTEACHINGLABEL);
-		this.wContent = config.getDouble(WCONTENTLABEL);
-		this.wDepartment = config.getDouble(WDEPARTMENTLABEL);
-		this.wSkill = config.getDouble(WSKILLLABEL);
+	public void configure(Configuration config) {		
+		this.wProfessors = config.getDouble("professorsWeight");
+		this.wContent = config.getDouble("contentWeight");
+		this.wArea = config.getDouble("areaWeight");
+		this.wCompetences = config.getDouble("competencesWeight");
 
-		double checkSum = wTeaching + wContent + wDepartment + wSkill;
+		double checkSum = wProfessors + wContent + wArea + wCompetences;
 		if (checkSum < 0.9999 || checkSum > 1.0001) {
-			System.err.println("Total weigth of the criterias must sum 1 (current " + checkSum + ")");
+			System.err.println("Total weigth of the criteria for Subject similarity must sum 1 (current " + checkSum + ")");
 			System.exit(-1);
 		}
 	}
-
 }

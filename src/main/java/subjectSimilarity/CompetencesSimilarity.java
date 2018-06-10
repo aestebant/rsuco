@@ -12,6 +12,8 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import util.IConfiguration;
 
@@ -20,36 +22,37 @@ import util.IConfiguration;
  * 
  * @author Aurora Esteban Toscano
  */
-public class SkillSimilarity implements ItemSimilarity, IConfiguration {
+public class CompetencesSimilarity implements ItemSimilarity, IConfiguration {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private DataModel skills;
-	private UserSimilarity skillSim;
-	private Class<? extends UserSimilarity> iSkillSim;
+	private DataModel competences;
+	private UserSimilarity competencesSim;
+	private Class<? extends UserSimilarity> iCompetencesSim;
 
 	// Threshold to consider two subjects similar
 	private static final double THRESHOLD = 0.3;
-	private static final String CONFIGLABEL = "skillSimilarity";
 
+	protected static final Logger log = LoggerFactory.getLogger(CompetencesSimilarity.class);
+	
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
 	/**
 	 * Initialize data model and similarity metric
 	 * 
-	 * @param skills
+	 * @param competences
 	 * @param config
 	 */
-	public SkillSimilarity(DataModel skills, Configuration config) {
+	public CompetencesSimilarity(DataModel competences, Configuration config) {
 		configure(config);
 
-		this.skills = skills;
+		this.competences = competences;
 
 		try {
-			this.skillSim = new CachingUserSimilarity(
-					iSkillSim.getDeclaredConstructor(DataModel.class).newInstance(this.skills), this.skills);
+			this.competencesSim = new CachingUserSimilarity(
+					iCompetencesSim.getDeclaredConstructor(DataModel.class).newInstance(this.competences), this.competences);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException | TasteException e) {
 			e.printStackTrace();
@@ -66,24 +69,26 @@ public class SkillSimilarity implements ItemSimilarity, IConfiguration {
 	}
 
 	/**
-	 * Compute a similarity based on boolean existence of commons skills in two
+	 * Compute a similarity based on boolean existence of commons competences in two
 	 * subjects
 	 * 
 	 * @throws TasteException
 	 */
 	@Override
 	public double itemSimilarity(long subject1, long subject2) throws TasteException {
-		double similarity = skillSim.userSimilarity(subject1, subject2);
+		double similarity = competencesSim.userSimilarity(subject1, subject2);
 		if (Double.isNaN(similarity))
 			similarity = 0.0;
 
+		//log.info("Similarity between {} and{} computed = {}", subject1, subject2, similarity);
+		
 		return similarity;
 	}
 
 	@Override
 	public long[] allSimilarItemIDs(long subject) throws TasteException {
 		FastIDSet similars = new FastIDSet();
-		LongPrimitiveIterator allSubjects = skills.getUserIDs();
+		LongPrimitiveIterator allSubjects = competences.getUserIDs();
 
 		while (allSubjects.hasNext()) {
 			long possiblySimilar = allSubjects.nextLong();
@@ -102,7 +107,7 @@ public class SkillSimilarity implements ItemSimilarity, IConfiguration {
 	@Override
 	public void configure(Configuration config) {
 		try {
-			this.iSkillSim = (Class<? extends UserSimilarity>) Class.forName(config.getString(CONFIGLABEL));
+			this.iCompetencesSim = (Class<? extends UserSimilarity>) Class.forName(config.getString("competencesSimilarity"));
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}

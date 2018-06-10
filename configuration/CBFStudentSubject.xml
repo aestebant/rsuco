@@ -1,7 +1,0 @@
-<configuration>
-	<recommender name = 'recommender.CBFStudentSubject'>
-		<pathStudentConfig>configuration/CBFStudent2.xml</pathStudentConfig>
-		<pathSubjectConfig>configuration/CBFSubject.xml</pathSubjectConfig>
-		<studentWeight>0.9</studentWeight>
-	</recommender>
-</configuration>

@@ -1,0 +1,16 @@
+<configuration>
+	<evaluator>
+		<computeRMSE>true</computeRMSE>
+		<computeMAE>false</computeMAE>
+		<computeBinaryClassification>false</computeBinaryClassification>
+		<useRandomSplit>true</useRandomSplit>
+		<useSpecificThreshold>true</useSpecificThreshold>
+		<dataPercent>0.5</dataPercent>
+		<trainPercent>0.8</trainPercent>
+		<reporter>
+			<reportLocation>results</reportLocation>
+			<reportTitle>RS</reportTitle>
+			<doReports>false</doReports>
+		</reporter>
+	</evaluator>
+</configuration>

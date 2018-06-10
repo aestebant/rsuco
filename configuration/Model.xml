@@ -1,10 +1,9 @@
 <configuration>
 	<model>
 		<source type="mysql">
-			<server>localhost</server>
+			<url>jdbc:mysql://localhost:3306/uco</url>
 			<user>root</user>
 			<password>1234</password>
-			<database>uco</database>
 		</source>
 		<ratings type="mysql">
 			<table>uco_punctuated_subject</table>
@@ -12,35 +11,35 @@
 			<item>subject_id</item>
 			<preference>rating</preference>
 		</ratings>
-		<scores type="mysql">
+		<grades type="mysql">
 			<table>uco_punctuated_subject</table>
 			<user>user_id</user>
 			<item>subject_id</item>
-			<preference>score</preference>
-		</scores>
-		<specialties type="mysql">
-			<table>uco_user</table>
+			<preference>grade</preference>
+		</grades>
+		<branches type="mysql">
+			<table>uco_student</table>
 			<user>id</user>
-			<item>specialty_id</item>
+			<item>branch_id</item>
 			<preference>bool</preference>
-		</specialties>
-		<teaching type="mysql">
+		</branches>
+		<professors type="mysql">
 			<table>uco_teaching</table>
 			<user>subject_id</user>
 			<item>professor_id</item>
 			<preference>bool</preference>
-		</teaching>
-		<departments type="mysql">
+		</professors>
+		<areas type="mysql">
 			<table>uco_subject</table>
 			<user>id</user>
-			<item>department_id</item>
+			<item>area_id</item>
 			<preference>bool</preference>
-		</departments>
-		<skills type="mysql">
-			<table>uco_subject_skill</table>
+		</areas>
+		<competences type="mysql">
+			<table>uco_subject_competence</table>
 			<user>subject_id</user>
-			<item>skill_id</item>
+			<item>competence_id</item>
 			<preference>bool</preference>
-		</skills>
+		</competences>
 	</model>
 </configuration>

@@ -8,32 +8,36 @@ import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Item based similarity for subjects based on common department
  * 
  * @author Aurora Esteban Toscano
  */
-public class DepartmentSimilarity implements ItemSimilarity {
+public class AreaSimilarity implements ItemSimilarity {
 
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private DataModel departments;
+	private DataModel areas;
 
 	// Threshold to consider two subjects similar
 	private final static double THRESHOLD = 0.3;
 
+	protected static final Logger log = LoggerFactory.getLogger(AreaSimilarity.class);
+	
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
 	/**
 	 * Initialize data model
 	 * 
-	 * @param departments
+	 * @param areas
 	 */
-	public DepartmentSimilarity(DataModel departments) {
-		this.departments = departments;
+	public AreaSimilarity(DataModel departments) {
+		this.areas = departments;
 	}
 
 	@Override
@@ -46,27 +50,32 @@ public class DepartmentSimilarity implements ItemSimilarity {
 	}
 
 	/**
-	 * Compute similarity between two subjects based on their departments in common
+	 * Compute similarity between two subjects based on their areas in common
 	 * Since each one belongs to one department, expected similarity is 0 or 1
 	 */
 	@Override
 	public double itemSimilarity(long subject1, long subject2) throws TasteException {
-		FastIDSet department1 = null, department2 = null;
+		FastIDSet area1 = null, area2 = null;
 		try {
-			department1 = departments.getItemIDsFromUser(subject1);
-			department2 = departments.getItemIDsFromUser(subject2);
+			area1 = areas.getItemIDsFromUser(subject1);
+			area2 = areas.getItemIDsFromUser(subject2);
 		} catch (TasteException e) {
 			e.printStackTrace();
 		}
-		int interSize = department1.intersectionSize(department2);
+		int interSize = area1.intersectionSize(area2);
+		int unionSize = area1.size() + area2.size() - interSize;
+		
+		double similarity = (double) interSize / (double) unionSize;
+		
+		//log.info("Similarity between {} and {} computed = {}", subject1, subject2, similarity);
 
-		return (double) interSize / (double) department1.size();
+		return similarity;
 	}
 
 	@Override
 	public long[] allSimilarItemIDs(long subject) throws TasteException {
 		FastIDSet similars = new FastIDSet();
-		LongPrimitiveIterator allSubjects = departments.getUserIDs();
+		LongPrimitiveIterator allSubjects = areas.getUserIDs();
 
 		while (allSubjects.hasNext()) {
 			long possiblySimilar = allSubjects.nextLong();

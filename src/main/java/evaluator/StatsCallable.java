@@ -21,6 +21,8 @@ import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import util.Reporter;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,13 +34,15 @@ final class StatsCallable implements Callable<Void> {
 	private final boolean logStats;
 	private final RunningAverageAndStdDev timing;
 	private final AtomicInteger noEstimateCounter;
+	private final Reporter reporter;
 
 	StatsCallable(Callable<Void> delegate, boolean logStats, RunningAverageAndStdDev timing,
-			AtomicInteger noEstimateCounter) {
+			AtomicInteger noEstimateCounter, Reporter reporter) {
 		this.delegate = delegate;
 		this.logStats = logStats;
 		this.timing = timing;
 		this.noEstimateCounter = noEstimateCounter;
+		this.reporter = reporter;
 	}
 
 	@Override
@@ -55,6 +59,7 @@ final class StatsCallable implements Callable<Void> {
 			long memory = totalMemory - runtime.freeMemory();
 			log.info("Approximate memory used: {}MB / {}MB", memory / 1000000L, totalMemory / 1000000L);
 			log.info("Unable to recommend in {} cases", noEstimateCounter.get());
+			reporter.addStats(average, totalMemory, memory, noEstimateCounter);
 		}
 		return null;
 	}

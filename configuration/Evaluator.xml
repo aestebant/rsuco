@@ -1,14 +1,17 @@
 <configuration>
 	<evaluator>
-		<seed>10</seed>
-		<error>
-			<trainPercent>0.9</trainPercent>
-			<compPercent>1</compPercent>
-		</error>
-		<stats>
-			<at>10</at>
-			<compPercent>1</compPercent>
-		</stats>
-		<recommender>configuration/CBFSubject.xml</recommender>
+		<computeRMSE>False</computeRMSE>
+		<computeMAE>True</computeMAE>
+		<computeBinaryClassification>True</computeBinaryClassification>
+		<useRandomSplit>True</useRandomSplit>
+		<useSpecificThreshold>True</useSpecificThreshold>
+		<dataPercent>1.0</dataPercent>
+		<trainPercent>0.8</trainPercent>
+		<foldsNumber>3</foldsNumber>
+		<reporter>
+			<reportLocation>results</reportLocation>
+			<reportTitle>RS</reportTitle>
+			<doReports>true</doReports>
+		</reporter>
 	</evaluator>
 </configuration>
