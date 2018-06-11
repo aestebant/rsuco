@@ -1,5 +1,5 @@
 <configuration>
-	<recommender name = 'recommender.CFStudent'>
+	<recommender name = 'subjectreco.recommender.CFStudent'>
 		<normalize>false</normalize>
 		<similarity>
 			<ratingsSimilarity>org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity</ratingsSimilarity>

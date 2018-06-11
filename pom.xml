@@ -125,22 +125,22 @@
 					<source>${jdk.version}</source>
 					<target>${jdk.version}</target>
 					<!-- <includes>
-						<include>evaluator/*</include>
-						<include>recommender/*</include>
-						<include>subjectSimilarity/*</include>
-						<include>util/*</include>
+						<include>subjectreco.evaluator/*</include>
+						<include>subjectreco.recommender/*</include>
+						<include>subjectreco.recommender.subjectSimilarity/*</include>
+						<include>subjectreco.util/*</include>
 					</includes> 
 					<excludes>
-						<exclude>evaluator/GenericRecommenderIRStatsEvaluator.java</exclude>
-						<exclude>evaluator/IREvaluator.java</exclude>
-						<exclude>evaluator/IRStatisticsImpl.java</exclude>
-						<exclude>evaluator/KFoldEvaluator.java</exclude>
+						<exclude>subjectreco.evaluator/GenericRecommenderIRStatsEvaluator.java</exclude>
+						<exclude>subjectreco.evaluator/IREvaluator.java</exclude>
+						<exclude>subjectreco.evaluator/IRStatisticsImpl.java</exclude>
+						<exclude>subjectreco.evaluator/KFoldEvaluator.java</exclude>
 					</excludes>
 					<includes>
-						<include>core/RunApp.java</include>
-						<include>recommender/*</include>
-						<include>subjectSimilarity/*</include>
-						<include>util/*</include> 
+						<include>subjectreco.core/RunApp.java</include>
+						<include>subjectreco.recommender/*</include>
+						<include>subjectreco.recommender.subjectSimilarity/*</include>
+						<include>subjectreco.util/*</include> 
 					</includes> -->
 				</configuration>
 			</plugin>
@@ -152,7 +152,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>core.RunApp</mainClass>
+							<mainClass>subjectreco.core.RunApp</mainClass>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>dependency-jars/</classpathPrefix>
 						</manifest>

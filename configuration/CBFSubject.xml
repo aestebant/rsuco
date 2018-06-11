@@ -1,5 +1,5 @@
 <configuration>
-	<recommender name='recommender.CBFSubject'>
+	<recommender name='subjectreco.recommender.CBFSubject'>
 		<similarity>
 			<!-- TanimotoCoefficientSimilarity / LogLikelihoodSimilarity -->
 			<professorsSimilarity>org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity</professorsSimilarity>

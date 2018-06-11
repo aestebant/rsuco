@@ -1,5 +1,5 @@
 <configuration>
-	<recommender name = 'recommender.HFStudentSubject'>
+	<recommender name = 'subjectreco.recommender.HFStudentSubject'>
 	<cfstudent>
 		<normalize>false</normalize>
 		<neighborhood>
