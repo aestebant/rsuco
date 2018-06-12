@@ -59,18 +59,6 @@
 		</dependency>
 		<dependency>
 			<groupId>${mahout.groupid}</groupId>
-			<artifactId>mahout-math</artifactId>
-			<version>${mahout.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${mahout.groupid}</groupId>
-			<artifactId>mahout-math</artifactId>
-			<type>test-jar</type>
-			<scope>test</scope>
-			<version>${mahout.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${mahout.groupid}</groupId>
 			<artifactId>mahout-utils</artifactId>
 			<version>0.5</version>
 		</dependency>
@@ -114,103 +102,5 @@
 		    <version>${lucene.version}</version>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.7.0</version>
-				<configuration>
-					<source>${jdk.version}</source>
-					<target>${jdk.version}</target>
-					<!-- <includes>
-						<include>subjectreco.evaluator/*</include>
-						<include>subjectreco.recommender/*</include>
-						<include>subjectreco.recommender.subjectSimilarity/*</include>
-						<include>subjectreco.util/*</include>
-					</includes> 
-					<excludes>
-						<exclude>subjectreco.evaluator/GenericRecommenderIRStatsEvaluator.java</exclude>
-						<exclude>subjectreco.evaluator/IREvaluator.java</exclude>
-						<exclude>subjectreco.evaluator/IRStatisticsImpl.java</exclude>
-						<exclude>subjectreco.evaluator/KFoldEvaluator.java</exclude>
-					</excludes>
-					<includes>
-						<include>subjectreco.core/RunApp.java</include>
-						<include>subjectreco.recommender/*</include>
-						<include>subjectreco.recommender.subjectSimilarity/*</include>
-						<include>subjectreco.util/*</include> 
-					</includes> -->
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>subjectreco.core.RunApp</mainClass>
-							<addClasspath>true</addClasspath>
-							<classpathPrefix>dependency-jars/</classpathPrefix>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.5.1</version>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<includeScope>runtime</includeScope>
-							<outputDirectory>${project.build.directory}/dependency-jars/</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<!--<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.5</version>
-				<executions>
-					<execution>
-						<id>custom-resources</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${basedir}/target/configuration</outputDirectory>
-							<resources>
-								<resource>
-									<directory>configuration</directory>
-									<includes>
-										<include>CFUser.xml</include>
-										<include>CFStudent.xml</include>
-										<include>CBFSubject.xml</include>
-										<include>HFStudentSubject.xml</include>
-										<include>MatrixFactorization.xml</include>
-										<include>stopWords.txt</include>
-									</includes>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin> -->
-		</plugins>
-	</build> 
-
 	<description>Library for making course recommendations based in multiple criteria</description>
 </project>
