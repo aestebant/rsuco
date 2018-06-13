@@ -1,13 +1,13 @@
 <configuration>
 	<evaluator>
-		<computeRMSE>False</computeRMSE>
-		<computeMAE>True</computeMAE>
-		<computeBinaryClassification>True</computeBinaryClassification>
-		<useRandomSplit>True</useRandomSplit>
+		<computeRMSE>True</computeRMSE>
+		<computeMAE>False</computeMAE>
+		<computeBinaryClassification>False</computeBinaryClassification>
+		<useRandomSplit>False</useRandomSplit>
 		<useSpecificThreshold>True</useSpecificThreshold>
 		<dataPercent>1.0</dataPercent>
 		<trainPercent>0.8</trainPercent>
-		<foldsNumber>3</foldsNumber>
+		<foldsNumber>10</foldsNumber>
 		<reporter>
 			<reportLocation>results</reportLocation>
 			<reportTitle>RS</reportTitle>
