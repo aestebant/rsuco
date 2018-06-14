@@ -88,8 +88,7 @@ public abstract class AEvaluator implements IEvaluator {
 	
 	/**
 	 * Generate the RecommenderBuilder suitable for Recommender's class
-	 * 
-	 * @param evalConf
+	 *
 	 *            Configuration of the subjectreco.recommender
 	 */
 	public void setRecommenderBuilder(File pathRecommender, ModelManage mm) {
@@ -210,7 +209,7 @@ public abstract class AEvaluator implements IEvaluator {
 			// Query of subject id and content
 			conn = mm.getDataSource().getConnection();
 			stmt = conn.prepareStatement("SELECT s.id, count(r.rating) as cuenta"
-					+ " from uco.uco_punctuated_subject r, uco.uco_subject s"
+					+ " from uco_punctuated_subject r, uco_subject s"
 					+ " where s.id = r.subject_id group by r.subject_id order by cuenta desc;");
 			rs = stmt.executeQuery();
 			orderedSubjects = new ArrayList<Long>();

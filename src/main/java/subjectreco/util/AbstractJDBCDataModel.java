@@ -25,11 +25,12 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 
 import com.google.common.collect.Lists;
-import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.Refreshable;
@@ -40,7 +41,6 @@ import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.Retriever;
 import org.apache.mahout.cf.taste.impl.common.jdbc.AbstractJDBCComponent;
-import org.apache.mahout.cf.taste.impl.common.jdbc.ResultSetIterator;
 import org.apache.mahout.cf.taste.impl.model.GenericItemPreferenceArray;
 import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.impl.model.GenericUserPreferenceArray;
@@ -87,7 +87,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
   public static final String DEFAULT_PREFERENCE_COLUMN = "preference";
   public static final String DEFAULT_PREFERENCE_TIME_COLUMN = "timestamp";
 
-  private final MysqlConnectionPoolDataSource dataSource;
+  private final DataSource dataSource;
   private final String preferenceTable;
   private final String userIDColumn;
   private final String itemIDColumn;
@@ -113,7 +113,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
   private float maxPreference;
   private float minPreference;
 
-  protected AbstractJDBCDataModel(MysqlConnectionPoolDataSource dataSource,
+  protected AbstractJDBCDataModel(DataSource dataSource,
                                   String getPreferenceSQL,
                                   String getPreferenceTimeSQL,
                                   String getUserSQL,
@@ -151,7 +151,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
          getMinPreferenceSQL);
   }
 
-  protected AbstractJDBCDataModel(MysqlConnectionPoolDataSource dataSource2,
+  protected AbstractJDBCDataModel(DataSource dataSource2,
                                   String preferenceTable,
                                   String userIDColumn,
                                   String itemIDColumn,
@@ -279,8 +279,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(getUserSQL, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       setLongParameter(stmt, 1, userID);
 
       log.debug("Executing SQL query: {}", getUserSQL);
@@ -301,9 +301,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving user", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
-
   }
 
   @Override
@@ -319,8 +318,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
 
       log.debug("Executing SQL query: {}", getAllUsersSQL);
       rs = stmt.executeQuery(getAllUsersSQL);
@@ -346,7 +345,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while exporting all data", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
 
     }
   }
@@ -359,13 +358,13 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     Statement stmt = null;
     ResultSet rs = null;
 
-    FastByIDMap<FastIDSet> result = new FastByIDMap<FastIDSet>();
+    FastByIDMap<FastIDSet> result = new FastByIDMap<>();
 
     try {
       conn = dataSource.getConnection();
       stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
 
       log.debug("Executing SQL query: {}", getAllUsersSQL);
       rs = stmt.executeQuery(getAllUsersSQL);
@@ -393,7 +392,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while exporting all data", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
 
     }
   }
@@ -414,8 +413,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(getUserSQL, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       setLongParameter(stmt, 1, userID);
 
       log.debug("Executing SQL query: {}", getUserSQL);
@@ -436,7 +435,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving item s", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
 
   }
@@ -450,8 +449,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(getPreferenceSQL, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(1);
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       setLongParameter(stmt, 1, userID);
       setLongParameter(stmt, 2, itemID);
 
@@ -466,7 +465,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving prefs for item", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
   }
 
@@ -482,8 +481,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(getPreferenceTimeSQL, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(1);
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       setLongParameter(stmt, 1, userID);
       setLongParameter(stmt, 2, itemID);
 
@@ -498,7 +497,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving time for item", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
   }
 
@@ -530,8 +529,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(getPrefsForItemSQL, ResultSet.TYPE_FORWARD_ONLY,
         ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       setLongParameter(stmt, 1, itemID);
 
       log.debug("Executing SQL query: {}", getPrefsForItemSQL);
@@ -545,7 +544,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving prefs for item", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
   }
 
@@ -583,8 +582,8 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
     try {
       conn = dataSource.getConnection();
       stmt = conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-      stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
-      stmt.setFetchSize(getFetchSize());
+      //stmt.setFetchDirection(ResultSet.FETCH_FORWARD);
+      //stmt.setFetchSize(getFetchSize());
       if (args != null) {
         for (int i = 1; i <= args.length; i++) {
           setLongParameter(stmt, i, args[i - 1]);
@@ -598,7 +597,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while retrieving number of {}", name, sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(rs, stmt, conn);
+        IOUtils.quietClose(rs, stmt, conn);
     }
   }
 
@@ -626,7 +625,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while setting preference", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(null, stmt, conn);
+        IOUtils.quietClose(null, stmt, conn);
     }
   }
 
@@ -651,7 +650,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
       log.warn("Exception while removing preference", sqle);
       throw new TasteException(sqle);
     } finally {
-      IOUtils.quietClose(null, stmt, conn);
+        IOUtils.quietClose(null, stmt, conn);
     }
   }
 
@@ -688,7 +687,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
         log.warn("Exception while removing preference", sqle);
         // do nothing
       } finally {
-        IOUtils.quietClose(rs, stmt, conn);
+          IOUtils.quietClose(rs, stmt, conn);
       }
     }
     return maxPreference;
@@ -713,7 +712,7 @@ private static final Logger log = LoggerFactory.getLogger(AbstractJDBCDataModel.
         log.warn("Exception while removing preference", sqle);
         // do nothing
       } finally {
-        IOUtils.quietClose(rs, stmt, conn);
+          IOUtils.quietClose(rs, stmt, conn);
       }
     }
     return minPreference;

@@ -66,9 +66,6 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
 	 * 
 	 * @param ratings
 	 * @param grades
-	 * @param computacion
-	 * @param software
-	 * @param computadores
 	 */
 	public StudentSimilarity(DataModel ratings, DataModel grades, DataModel branches, Configuration config) {
 		configure(config);

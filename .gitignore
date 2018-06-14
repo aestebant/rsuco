@@ -5,4 +5,6 @@
 /.idea/usage.statistics.xml
 /.idea/tasks.xml
 /.idea/kotlinc.xml
-/.idea/recommender.iml
+/.idea/libraries/
+/.idea/artifacts/
+recommender.iml

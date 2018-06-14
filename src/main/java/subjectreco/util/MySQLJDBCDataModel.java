@@ -17,12 +17,12 @@ package subjectreco.util;
  * limitations under the License.
  */
 
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
+import javax.sql.PooledConnection;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.jdbc.AbstractJDBCComponent;
-
-import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
 /**
  * <p>
@@ -134,39 +134,7 @@ public class MySQLJDBCDataModel extends AbstractJDBCDataModel {
 	 */
 	private static final long serialVersionUID = 1L;
 
-/**
-   * <p>
-   * Creates a {@link MySQLJDBCDataModel} using the default {@link DataSource} (named
-   * {@link #DEFAULT_DATASOURCE_NAME} and default table/column names.
-   * </p>
-   * 
-   * @throws TasteException
-   *           if {@link DataSource} can't be found
-   */
-  public MySQLJDBCDataModel() throws TasteException {
-    this(DEFAULT_DATASOURCE_NAME);
-  }
-  
-  /**
-   * <p>
-   * Creates a {@link MySQLJDBCDataModel} using the default {@link DataSource} found under the given name, and
-   * using default table/column names.
-   * </p>
-   * 
-   * @param dataSourceName
-   *          name of {@link DataSource} to look up
-   * @throws TasteException
-   *           if {@link DataSource} can't be found
-   */
-  public MySQLJDBCDataModel(String dataSourceName) throws TasteException {
-    this((MysqlConnectionPoolDataSource) AbstractJDBCComponent.lookupDataSource(dataSourceName),
-         DEFAULT_PREFERENCE_TABLE,
-         DEFAULT_USER_ID_COLUMN,
-         DEFAULT_ITEM_ID_COLUMN,
-         DEFAULT_PREFERENCE_COLUMN,
-         DEFAULT_PREFERENCE_TIME_COLUMN);
-  }
-  
+
   /**
    * <p>
    * Creates a {@link MySQLJDBCDataModel} using the given {@link DataSource} and default table/column names.
@@ -175,7 +143,7 @@ public class MySQLJDBCDataModel extends AbstractJDBCDataModel {
    * @param dataSource
    *          {@link DataSource} to use
    */
-  public MySQLJDBCDataModel(MysqlConnectionPoolDataSource dataSource) {
+  public MySQLJDBCDataModel(DataSource dataSource) {
     this(dataSource,
          DEFAULT_PREFERENCE_TABLE,
          DEFAULT_USER_ID_COLUMN,
@@ -201,7 +169,7 @@ public class MySQLJDBCDataModel extends AbstractJDBCDataModel {
    *          preference column name
    * @param timestampColumn timestamp column name (may be null)
    */
-  public MySQLJDBCDataModel(MysqlConnectionPoolDataSource dataSource,
+  public MySQLJDBCDataModel(DataSource dataSource,
                             String preferenceTable,
                             String userIDColumn,
                             String itemIDColumn,

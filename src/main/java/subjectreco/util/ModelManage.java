@@ -2,12 +2,23 @@ package subjectreco.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
+import javax.sql.PooledConnection;
 
+
+import com.mysql.cj.jdbc.MysqlConnectionPoolDataSource;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
@@ -15,6 +26,7 @@ import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
+import org.apache.mahout.cf.taste.impl.common.jdbc.AbstractJDBCComponent;
 import org.apache.mahout.cf.taste.impl.model.GenericBooleanPrefDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.impl.model.GenericUserPreferenceArray;
@@ -22,7 +34,7 @@ import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
+import org.sqlite.javax.SQLiteConnectionPoolDataSource;
 
 /**
  * Group in a class main model's functions used in the library
@@ -34,10 +46,7 @@ public class ModelManage implements IConfiguration {
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	private static MysqlConnectionPoolDataSource ds;
-
-	// Information about dburl's connection and MySQL data base
-	private String dburl, dbuser, dbpswd;
+	private DataSource ds;
 
 	// Configuration of all possible models to load
 	private Configuration config;
@@ -47,25 +56,6 @@ public class ModelManage implements IConfiguration {
 	/////////////////////////////////////////////
 	public ModelManage(Configuration config) {
 		configure(config);
-		createPool();
-	}
-
-	/**
-	 * Connect to a MySQL server
-	 */
-	public void createPool() {
-		// Check driver
-		try {
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (Exception e) {
-			System.err.println("MySQL driver not found");
-			System.exit(-1);
-		}
-
-		ds = new MysqlConnectionPoolDataSource();
-		ds.setURL(dburl);
-		ds.setUser(dbuser);
-		ds.setPassword(dbpswd);
 	}
 	
 	public DataSource getDataSource() {
@@ -102,7 +92,8 @@ public class ModelManage implements IConfiguration {
 		if (params.get("preference").equals("bool")) {
 			// Load the model without the preference column (a dump value)
 			model = new MySQLJDBCDataModel(ds, params.get("table"), params.get("user"), params.get("item"),
-					params.get("item"), null);
+						params.get("item"),null);
+
 			// Transform the model to boolean
 			try {
 				model = new GenericBooleanPrefDataModel(GenericBooleanPrefDataModel.toDataMap(model));
@@ -113,8 +104,10 @@ public class ModelManage implements IConfiguration {
 		}
 		// Load a generic data model
 		else {
+
 			model = new MySQLJDBCDataModel(ds, params.get("table"), params.get("user"), params.get("item"),
-					params.get("preference"), null);
+						params.get("preference"), null);
+
 		}
 
 		return model;
@@ -176,7 +169,7 @@ public class ModelManage implements IConfiguration {
 		//org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();
 		//l.setLevel(org.apache.log4j.Level.WARN);
 
-		FastByIDMap<PreferenceArray> preferences = new FastByIDMap<PreferenceArray>();
+		FastByIDMap<PreferenceArray> preferences = new FastByIDMap<>();
 
 		LongPrimitiveIterator users = null;
 		try {
@@ -234,8 +227,8 @@ public class ModelManage implements IConfiguration {
 			e.printStackTrace();
 		}
 
-		ArrayList<RunningAverage> avgUsers = new ArrayList<RunningAverage>(nUsers);
-		ArrayList<RunningAverage> avgItems = new ArrayList<RunningAverage>(nItems);
+		ArrayList<RunningAverage> avgUsers = new ArrayList<>(nUsers);
+		ArrayList<RunningAverage> avgItems = new ArrayList<>(nItems);
 		RunningAverage avgAll = new FullRunningAverage();
 
 		LongPrimitiveIterator users = null;
@@ -358,15 +351,19 @@ public class ModelManage implements IConfiguration {
 
 		String sourceType = this.config.getString("source[@type]");
 		switch (sourceType) {
-		case "mysql":
-			dburl = this.config.getString("source.url");
-			dbuser = this.config.getString("source.user");
-			dbpswd = this.config.getString("source.password");
-			break;
-
-		default:
-			System.err.println("Cannot recognize source type");
-			System.exit(-1);
+			case "mysql":
+				ds = new MysqlConnectionPoolDataSource();
+				((MysqlConnectionPoolDataSource) ds).setUrl(this.config.getString("source.url"));
+				((MysqlConnectionPoolDataSource) ds).setUser(this.config.getString("source.user"));
+				((MysqlConnectionPoolDataSource) ds).setPassword(this.config.getString("source.password"));
+				break;
+			case "sqlite":
+				ds = new SQLiteConnectionPoolDataSource();
+				((SQLiteConnectionPoolDataSource) ds).setUrl(this.config.getString("source.url"));
+				break;
+			default:
+				System.err.println("Cannot recognize source type");
+				System.exit(-1);
 		}
 	}
 }

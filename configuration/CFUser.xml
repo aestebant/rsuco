@@ -1,5 +1,5 @@
 <configuration>
-	<subjectreco.recommender name = 'subjectreco.recommender.CFUser'>
+	<recommender name = 'subjectreco.recommender.CFUser'>
 		<normalize>false</normalize>
 		<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
 		SpearmanCorrelationSimilarity / UncenteredCosineSimilarity -->
@@ -10,5 +10,5 @@
 			<size>5</size> <!-- for option 1 -->
 			<threshold>0.5</threshold> <!-- for option 2 -->
 		</neighborhood>
-	</subjectreco.recommender>
+	</recommender>
 </configuration>

@@ -1,7 +1,8 @@
 <configuration>
 	<model>
-		<source type="mysql">
-			<url>jdbc:mysql://localhost:3306/uco</url>
+		<source type="sqlite">
+			<!--<url>jdbc:mysql://localhost:3306/uco?autoReconnect=true&amp;useSSL=false&amp;serverTimezone=CET</url>-->
+			<url>jdbc:sqlite:/home/aurora/sqlite/uco.sqlite</url>
 			<user>root</user>
 			<password>1234</password>
 		</source>

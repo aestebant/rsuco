@@ -35,7 +35,7 @@ public class RunEval {
 		eval.setDataModel(model);
 		
 		eval.setOrderedbyNPrefsSubjects(mm);
-		eval.execute();
+		eval.execute((long) 123456);
 
 		/*List<Long> seeds = new ArrayList<>(5);
 		seeds.add(10L);

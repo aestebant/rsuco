@@ -37,7 +37,7 @@ public class createDocumentaryDB {
 		TYPE_STORED.freeze();
 	}
 	
-	private static String indexDestination = "documentaryDB";
+	private static String indexDestination = "configuration/documentaryDB";
 	
 	public static void main(String[] args) {
 		
