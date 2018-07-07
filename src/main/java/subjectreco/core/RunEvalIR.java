@@ -35,13 +35,17 @@ class RunEvalIR {
 		
 		IREvaluator evaluator = new IREvaluator(model);
 		if (evaluator instanceof IConfiguration)
-			((IConfiguration) evaluator).configure(config.subset("subjectreco.evaluator"));
+			((IConfiguration) evaluator).configure(config.subset("irstats"));
+
+		// Load recommender
+		Configuration configRS = ConfigLoader.XMLFile(new File(args[2]));
+		evaluator.setRecommenderBuilder(configRS, mm);
 			
 		evaluator.execute();
 		
 		IRStatistics results = evaluator.getStats();
 		
-		System.out.println("Configuration tested: " + config.getString("subjectreco.evaluator.recommender"));
+		//System.out.println("Configuration tested: " + config.getString("subjectreco.evaluator.recommender"));
 		
 		System.out.println(results.getNormalizedDiscountedCumulativeGain());
 	}

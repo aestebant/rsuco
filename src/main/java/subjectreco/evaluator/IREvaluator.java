@@ -55,12 +55,7 @@ public class IREvaluator implements IConfiguration {
 		setStats();
 	}
 
-	/**
-	 * Generate the RecommenderBuilder suitable for Recommender's class
-	 * 
-	 * @param evalConf
-	 *            Configuration of the subjectreco.recommender
-	 */
+
 	public void setRecommenderBuilder(Configuration recommenderConf, ModelManage mm) {
 		// Instantiate the subjectreco.recommender
 		final IRecommender recommender = RecommenderLoader.instantiate(recommenderConf, mm);
@@ -98,9 +93,9 @@ public class IREvaluator implements IConfiguration {
 	 * @see subjectreco.util.IConfiguration#configure(Configuration)
 	 */
 	public void configure(Configuration config) {
-		at = config.getInt("stats.at");
-		compPrcnSt = config.getDouble("stats.compPercent");
-		threshold = config.getDouble("stats.threshold", Double.NaN);
+		at = config.getInt("at");
+		compPrcnSt = config.getDouble("dataPercent");
+		threshold = config.getDouble("threshold", Double.NaN);
 
 		// If user doesn't specify a seed, a -1 value indicate to the algorithm that
 		// must be random.

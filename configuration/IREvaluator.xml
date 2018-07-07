@@ -1,0 +1,8 @@
+<configuration>
+    <irstats>
+        <at>5</at>
+        <dataPercent>1.0</dataPercent>
+        <threshold>3.0</threshold>
+        <seed>123456</seed>
+    </irstats>
+</configuration>

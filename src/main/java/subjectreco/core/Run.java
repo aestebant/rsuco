@@ -39,7 +39,10 @@ class Run {
 		IRecommender recommender = RecommenderLoader.instantiate(configReco, mm);
 		
 		DataModel model = mm.loadModel("ratings");
-		
+
+		long start = System.nanoTime();
+
+
 		recommender.execute(model);
 
 		System.out.println("User | Recommendations");
@@ -60,9 +63,11 @@ class Run {
 			try {
 				System.out.println(userID + " --> " + recommender.getRecommender().recommend(userID, nRecommendations));
 			} catch (TasteException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+
+		double time = (System.nanoTime() - start) * 1e-9;
+		System.out.println("Needed time (s): " + time);
 	}
 }

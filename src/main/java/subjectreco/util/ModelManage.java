@@ -34,6 +34,7 @@ import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 
+import org.sqlite.SQLiteDataSource;
 import org.sqlite.javax.SQLiteConnectionPoolDataSource;
 
 /**
@@ -359,6 +360,9 @@ public class ModelManage implements IConfiguration {
 				break;
 			case "sqlite":
 				ds = new SQLiteConnectionPoolDataSource();
+				((SQLiteConnectionPoolDataSource) ds).setReadOnly(true);
+				((SQLiteConnectionPoolDataSource) ds).setTempStore("MEMORY");
+				((SQLiteConnectionPoolDataSource) ds).setSynchronous("OFF");
 				((SQLiteConnectionPoolDataSource) ds).setUrl(this.config.getString("source.url"));
 				break;
 			default:

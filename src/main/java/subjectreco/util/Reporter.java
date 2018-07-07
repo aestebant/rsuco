@@ -63,15 +63,11 @@ public class Reporter implements IConfiguration {
 	
 	public void addResults(Map<String, Double[]> results) {
 		if (doReports) {
-			String head = "";
 			String res = "";
-			for (String key : results.keySet()) {
-				head = head.concat(key + " , +/- ,");
-				res = res.concat(results.get(key)[0] + " , " + results.get(key)[1] + " , ");
-			}
+			for (String key : results.keySet())
+				res = res.concat(key + " +/- , " + results.get(key)[0] + " , " + results.get(key)[1] + "\n");
 			try {
-				reportFileWriter.write(head + "\n");
-				reportFileWriter.write(res + "\n\n");
+				reportFileWriter.write(res);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
