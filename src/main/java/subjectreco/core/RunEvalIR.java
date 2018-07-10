@@ -10,7 +10,6 @@ import com.google.common.base.Preconditions;
 
 import subjectreco.evaluator.IREvaluator;
 import subjectreco.util.ConfigLoader;
-import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
 
 /**
@@ -30,12 +29,11 @@ class RunEvalIR {
 
 		DataModel model = mm.loadModel("ratings");
 		
-		// Load subjectreco.recommender configuration
+		// Load recommender configuration
 		Configuration config = ConfigLoader.XMLFile(new File(args[1]));
 		
 		IREvaluator evaluator = new IREvaluator(model);
-		if (evaluator instanceof IConfiguration)
-			((IConfiguration) evaluator).configure(config.subset("irstats"));
+		evaluator.configure(config.subset("irstats"));
 
 		// Load recommender
 		Configuration configRS = ConfigLoader.XMLFile(new File(args[2]));
@@ -45,8 +43,6 @@ class RunEvalIR {
 		
 		IRStatistics results = evaluator.getStats();
 		
-		//System.out.println("Configuration tested: " + config.getString("subjectreco.evaluator.recommender"));
-		
-		System.out.println(results.getNormalizedDiscountedCumulativeGain());
+		System.out.println("nDCG:\t" + results.getNormalizedDiscountedCumulativeGain());
 	}
 }
