@@ -50,9 +50,9 @@ import subjectreco.util.Reporter;
 public abstract class AEvaluator implements IEvaluator {
 
     protected static final Logger log = LoggerFactory.getLogger(AEvaluator.class);
-    protected static Reporter reporter;
+    static Reporter reporter;
 
-    protected RecommenderBuilder recoBuilder;
+    RecommenderBuilder recoBuilder;
     private Boolean recoFromFile = false;
     private File recoPath;
 
@@ -62,13 +62,13 @@ public abstract class AEvaluator implements IEvaluator {
     private Boolean computeRMSE;
     private Boolean computeMAE;
     private Boolean computeBinaryClassif;
-    protected Boolean useRandomSplit;
+    Boolean useRandomSplit;
     private Boolean useSpecificThreshold;
-    protected Boolean singleExecution = true;
+    Boolean singleExecution = true;
 
-    protected Random random;
-    protected List<Long> orderedSubjects;
-    protected double dataPercent;
+    Random random;
+    List<Long> orderedSubjects;
+    double dataPercent;
     private HashMap<Long, Double> usersThresh;
 
     // Difference based errors
@@ -83,7 +83,7 @@ public abstract class AEvaluator implements IEvaluator {
 
     Map<String, Double[]> results;
 
-    protected AEvaluator() {
+    AEvaluator() {
         reporter = new Reporter();
     }
 
@@ -299,7 +299,7 @@ public abstract class AEvaluator implements IEvaluator {
      * @param testPrefs   Percentage of the dataModel used for test
      * @param recommender Recommender
      */
-    protected void getEvaluation(FastByIDMap<PreferenceArray> testPrefs, Recommender recommender) {
+    void getEvaluation(FastByIDMap<PreferenceArray> testPrefs, Recommender recommender) {
 
         // Make evaluation parallelizable by users
         Collection<Callable<Void>> estimateCallables = Lists.newArrayList();
@@ -405,7 +405,7 @@ public abstract class AEvaluator implements IEvaluator {
     }
 
     /**
-     * Class for make the estimation of ratings for an user parallelizable
+     * Class for make the estimation of ratings for an user parallelizable.
      */
     private final class PreferenceEstimateCallable implements Callable<Void> {
 
@@ -422,6 +422,12 @@ public abstract class AEvaluator implements IEvaluator {
             this.noEstimateCounter = noEstimateCounter;
         }
 
+        /**
+         * Obtain estimation for an user and compare with real preferences.
+         *
+         * @return Void
+         * @throws TasteException Mahout exception
+         */
         @Override
         public Void call() throws TasteException {
             double threshold = -1;
@@ -466,14 +472,15 @@ public abstract class AEvaluator implements IEvaluator {
     }
 
     /**
+     * Return map with all computed metrics
      *
-     * @return
+     * @return Map<metric   ,       result>
      */
     public Map<String, Double[]> getResults() {
         return results;
     }
 
-    public String printResults() {
+    String printResults() {
         StringBuilder res = new StringBuilder();
         for (String key : results.keySet()) {
             res.append(key).append(": ").append(results.get(key)[0]).append(" +/- ").append(results.get(key)[1]).append("\n");
