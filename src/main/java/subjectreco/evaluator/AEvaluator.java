@@ -47,8 +47,15 @@ import subjectreco.util.ModelManage;
 import subjectreco.util.RecommenderLoader;
 import subjectreco.util.Reporter;
 
+/**
+ * Base code for the difference-based evaluation
+ * @author Aurora Esteban Toscano
+ */
 public abstract class AEvaluator implements IEvaluator {
 
+    //////////////////////////////////////////////
+    // -------------------------------- Variables
+    /////////////////////////////////////////////
     protected static final Logger log = LoggerFactory.getLogger(AEvaluator.class);
     static Reporter reporter;
 
@@ -488,6 +495,10 @@ public abstract class AEvaluator implements IEvaluator {
         return res.toString();
     }
 
+    /**
+     * Obtain configuration of base params for the evaluation
+     * @param config Configuration
+     */
     public void configure(Configuration config) {
         computeRMSE = config.getBoolean("computeRMSE");
         computeMAE = config.getBoolean("computeMAE");

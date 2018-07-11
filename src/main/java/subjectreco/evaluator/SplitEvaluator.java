@@ -2,7 +2,6 @@ package subjectreco.evaluator;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.configuration2.Configuration;
@@ -19,154 +18,175 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 
 import com.google.common.base.Preconditions;
 
+/**
+ * Hold out validation of a recommender
+ *
+ * @author Aurora Esteban Toscano
+ */
 public class SplitEvaluator extends AEvaluator {
 
-	private double trainPercent;
-	private FastByIDMap<PreferenceArray> trainPrefs;
-	private FastByIDMap<PreferenceArray> testPrefs;
-	
-	public void execute() {
-		super.execute();
-		
-		Preconditions.checkArgument(trainPercent > 0.0 && trainPercent < 1.0, "Invalid train percentage: " + trainPercent);
-		
-		log.info("Beginning evaluation using {} of {}", trainPercent, model);
-		String info = "Train percentage, " + trainPercent;
-		reporter.addLog(info);
-		
-		Integer numUsers = null;
-		try {
-			numUsers = model.getNumUsers();
-		} catch (TasteException e) {
-			e.printStackTrace();
-		}
-		
-		trainPrefs = new FastByIDMap<PreferenceArray>(1 + (int) (dataPercent * numUsers));
-		testPrefs = new FastByIDMap<PreferenceArray>(1 + (int) (dataPercent * numUsers));
+    //////////////////////////////////////////////
+    // -------------------------------- Variables
+    /////////////////////////////////////////////
+    private double trainPercent;
+    private FastByIDMap<PreferenceArray> trainPrefs;
+    private FastByIDMap<PreferenceArray> testPrefs;
 
-		LongPrimitiveIterator it = null;
-		try {
-			it = model.getUserIDs();
-		} catch (TasteException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		while (it.hasNext()) {
-			long userID = it.nextLong();
-			if (random.nextDouble() < dataPercent) {
-				if (useRandomSplit)
-					splitOneUserPrefsRandom(userID);
-				else
-					splitOneUserPrefsOrdered(userID);
-			}
-		}
+    /**
+     * Base code for hold out evaluation of a recommender
+     */
+    public void execute() {
+        super.execute();
 
-		DataModel trainModel = new GenericDataModel(trainPrefs);
-		
-		Recommender recommender = null;
-		try {
-			recommender = recoBuilder.buildRecommender(trainModel);
-		} catch (TasteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		getEvaluation(testPrefs, recommender);
-		
-		reporter.addResults(results);
-		log.info("Execution results:\n" + printResults());
-		
-		if (singleExecution)
-			reporter.finishExperiment();
-	}
+        Preconditions.checkArgument(trainPercent > 0.0 && trainPercent < 1.0, "Invalid train percentage: " + trainPercent);
 
-	@Override
-	public void configure(Configuration config) {
-		super.configure(config);
-		trainPercent = config.getDouble("trainPercent");
-	}
+        log.info("Beginning evaluation using {} of {}", trainPercent, model);
+        String info = "Train percentage, " + trainPercent;
+        reporter.addLog(info);
 
-	
-	private void splitOneUserPrefsRandom(long userID) {
-		List<Preference> oneUserTrainPrefs = new ArrayList<>();
-		List<Preference> oneUserTestPrefs = new ArrayList<>();
-		PreferenceArray prefs = null;
-		try {
-			prefs = model.getPreferencesFromUser(userID);
-		} catch (TasteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		List<Preference> shuffledPrefs = new ArrayList<>();
-		Iterator<Preference> it = prefs.iterator();
-		while (it.hasNext()) {
-			shuffledPrefs.add(it.next());
-		}
+        int numUsers = 0;
+        try {
+            numUsers = model.getNumUsers();
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
 
-		int limit = (int) Math.round(prefs.length() * trainPercent);
-		
-		// Shuffle the items
-		Collections.shuffle(shuffledPrefs, random);
-		
-		for (int i = 0; i < limit; ++i) {
-			Preference newPref = new GenericPreference(userID, shuffledPrefs.get(i).getItemID(),
-					shuffledPrefs.get(i).getValue());
-			oneUserTrainPrefs.add(newPref);
-		}
-		for (int i = limit; i < prefs.length(); ++i) {
-			Preference newPref = new GenericPreference(userID, shuffledPrefs.get(i).getItemID(),
-					shuffledPrefs.get(i).getValue());
-			oneUserTestPrefs.add(newPref);
-		}
-		
-		if (oneUserTrainPrefs != null) {
-			trainPrefs.put(userID, new GenericUserPreferenceArray(oneUserTrainPrefs));
-			if (oneUserTestPrefs != null) {
-				testPrefs.put(userID, new GenericUserPreferenceArray(oneUserTestPrefs));
-			}
-		}
-	}
+        trainPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
+        testPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
 
-	private void splitOneUserPrefsOrdered(long userID) {
-		Preconditions.checkNotNull(orderedSubjects, "Required first: setOrderedbyNPrefsSubjects");
+        LongPrimitiveIterator it = null;
+        try {
+            it = model.getUserIDs();
+        } catch (TasteException e1) {
+            e1.printStackTrace();
+        }
+        assert it != null;
+        while (it.hasNext()) {
+            long userID = it.nextLong();
+            if (random.nextDouble() < dataPercent) {
+                if (useRandomSplit)
+                    splitOneUserPrefsRandom(userID);
+                else
+                    splitOneUserPrefsOrdered(userID);
+            }
+        }
 
-		List<Preference> oneUserTrainPrefs = new ArrayList<>();
-		List<Preference> oneUserTestPrefs = new ArrayList<>();
-		PreferenceArray prefs = null;
-		try {
-			prefs = model.getPreferencesFromUser(userID);
-		} catch (TasteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		List<Preference> orderedPrefs = new ArrayList<Preference>(prefs.length());
+        DataModel trainModel = new GenericDataModel(trainPrefs);
 
-		// Order user preferences by total number of valuations per subject
-		Iterator<Long> it = orderedSubjects.iterator();
-		while (it.hasNext()) {
-			long itemID = it.next();
-			if (prefs.hasPrefWithItemID(itemID)) {
-				int idx = 0;
-				for (int i = 0; i < prefs.length(); ++i) {
-					if (prefs.getItemID(i) == itemID)
-						break;
-					idx++;
-				}
-				orderedPrefs.add(prefs.get(idx));
-			}
-		}
-		
-		int limit = (int) Math.round(1 - (prefs.length() * trainPercent));
-		for (int i = 0; i < 2*limit; i+=2) {
-			Preference newPref1 = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
-			oneUserTrainPrefs.add(newPref1);
-			Preference newPref2 = new GenericPreference(userID, orderedPrefs.get(i+1).getItemID(), orderedPrefs.get(i+1).getValue());
-			oneUserTestPrefs.add(newPref2);
-		}
-		for (int i = 2*limit; i < prefs.length(); ++i) {
-			Preference newPref = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
-			oneUserTrainPrefs.add(newPref);
-		}
-	}
+        Recommender recommender = null;
+        try {
+            recommender = recoBuilder.buildRecommender(trainModel);
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+
+        getEvaluation(testPrefs, recommender);
+
+        reporter.addResults(results);
+        log.info("Execution results:\n" + printResults());
+
+        if (singleExecution)
+            reporter.finishExperiment();
+    }
+
+    /**
+     * Take one user preferences and distribute them randomly between train and test.
+     *
+     * @param userID id that identifies the user in the dataModel
+     */
+    private void splitOneUserPrefsRandom(long userID) {
+        List<Preference> oneUserTrainPrefs = new ArrayList<>();
+        List<Preference> oneUserTestPrefs = new ArrayList<>();
+        PreferenceArray prefs = null;
+        try {
+            prefs = model.getPreferencesFromUser(userID);
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+
+        List<Preference> shuffledPrefs = new ArrayList<>();
+        assert prefs != null;
+        for (Preference pref : prefs) {
+            shuffledPrefs.add(pref);
+        }
+
+        int limit = (int) Math.round(prefs.length() * trainPercent);
+
+        // Shuffle the items
+        Collections.shuffle(shuffledPrefs, random);
+
+        for (int i = 0; i < limit; ++i) {
+            Preference newPref = new GenericPreference(userID, shuffledPrefs.get(i).getItemID(),
+                    shuffledPrefs.get(i).getValue());
+            oneUserTrainPrefs.add(newPref);
+        }
+        for (int i = limit; i < prefs.length(); ++i) {
+            Preference newPref = new GenericPreference(userID, shuffledPrefs.get(i).getItemID(),
+                    shuffledPrefs.get(i).getValue());
+            oneUserTestPrefs.add(newPref);
+        }
+
+        trainPrefs.put(userID, new GenericUserPreferenceArray(oneUserTrainPrefs));
+        testPrefs.put(userID, new GenericUserPreferenceArray(oneUserTestPrefs));
+    }
+
+    /**
+     * Take one user preferences and distribute them between train and test paying attention to
+     * keep subjects balanced according to the number of ratings that they have received
+     *
+     * @param userID id that identifies the user in the dataModel
+     */
+    private void splitOneUserPrefsOrdered(long userID) {
+        Preconditions.checkNotNull(orderedSubjects, "Required first: setOrderedbyNPrefsSubjects");
+
+        List<Preference> oneUserTrainPrefs = new ArrayList<>();
+        List<Preference> oneUserTestPrefs = new ArrayList<>();
+        PreferenceArray prefs = null;
+        try {
+            prefs = model.getPreferencesFromUser(userID);
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+        assert prefs != null;
+        List<Preference> orderedPrefs = new ArrayList<>(prefs.length());
+
+        // Order user preferences by total number of valuations per subject
+        for (Long itemID : orderedSubjects) {
+            if (prefs.hasPrefWithItemID(itemID)) {
+                int idx = 0;
+                for (int i = 0; i < prefs.length(); ++i) {
+                    if (prefs.getItemID(i) == itemID)
+                        break;
+                    idx++;
+                }
+                orderedPrefs.add(prefs.get(idx));
+            }
+        }
+
+        int limit = (int) Math.round(1 - (prefs.length() * trainPercent));
+        for (int i = 0; i < 2 * limit; i += 2) {
+            Preference newPref1 = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
+            oneUserTrainPrefs.add(newPref1);
+            Preference newPref2 = new GenericPreference(userID, orderedPrefs.get(i + 1).getItemID(), orderedPrefs.get(i + 1).getValue());
+            oneUserTestPrefs.add(newPref2);
+        }
+        for (int i = 2 * limit; i < prefs.length(); ++i) {
+            Preference newPref = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
+            oneUserTrainPrefs.add(newPref);
+        }
+
+        trainPrefs.put(userID, new GenericUserPreferenceArray(oneUserTrainPrefs));
+        testPrefs.put(userID, new GenericUserPreferenceArray(oneUserTestPrefs));
+    }
+
+    /**
+     * Hold out specific configuration
+     *
+     * @param config Configuration
+     */
+    @Override
+    public void configure(Configuration config) {
+        super.configure(config);
+        trainPercent = config.getDouble("trainPercent");
+    }
 }
