@@ -7,26 +7,14 @@ import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
 
 /**
- * General interface for the particular use in the problem of Mahout Recommender
- * 
+ * Common interface for recommenders in this library
+ *
  * @author Aurora Esteban Toscano
  */
 public interface IRecommender extends IConfiguration {
-	//////////////////////////////////////////////
-	// ---------------------------------- Methods
-	/////////////////////////////////////////////
-	/**
-	 * Execute the subjectreco.recommender
-	 * 
-	 * @param model
-	 *            DataModel that relate users and items
-	 */
-	public void execute(DataModel model);
-	
-	public void setModelManage(ModelManage mm);
+    void execute(DataModel model);
 
-	/**
-	 * @return desencapsulated Mahout Recommender
-	 */
-	public Recommender getRecommender();
+    void setModelManage(ModelManage mm);
+
+    Recommender getRecommender();
 }

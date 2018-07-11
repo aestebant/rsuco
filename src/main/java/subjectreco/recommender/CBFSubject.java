@@ -12,71 +12,75 @@ import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import subjectreco.recommender.subjectSimilarity.MultiSimilarity;
 
 /**
- * Content based subjectreco.recommender for subjects that take a specific similarity metric
- *  
+ * Content based recommender for subjects that take a specific similarity metric based on professors, competences,
+ * contents and knowledge area of subjects.
+ *
  * @author Aurora Esteban Toscano
  */
 public class CBFSubject extends ARecommender {
-	//////////////////////////////////////////////
-	// -------------------------------- Variables
-	/////////////////////////////////////////////
-	private DataModel professors;
-	private DataModel areas;
-	private DataModel competences;
-	
-	private ItemSimilarity similarity;
-	private Configuration configSim;
+    //////////////////////////////////////////////
+    // -------------------------------- Variables
+    /////////////////////////////////////////////
+    private DataModel professors;
+    private DataModel areas;
+    private DataModel competences;
 
-	//////////////////////////////////////////////
-	// ---------------------------------- Methods
-	/////////////////////////////////////////////
-	/**
-	 * @see IRecommender#execute(DataModel)
-	 */
-	@Override
-	public void execute(DataModel model) {
-		try {
-			similarity = new CachingItemSimilarity(new GenericItemSimilarity(new MultiSimilarity(professors, areas, competences, configSim), model), model);
-			
-			log.info("Launching recommender");
-			recommender = new CachingRecommender(new GenericItemBasedRecommender(model, similarity));
-		} catch (TasteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * @see subjectreco.util.IConfiguration#configure(Configuration)
-	 */
-	@Override
-	public void configure(Configuration config) {
-		// Standard configuration
-		super.configure(config);
+    private Configuration configSim;
 
-		log.info("Setting especific CBFSubject configuration");
+    //////////////////////////////////////////////
+    // ---------------------------------- Methods
+    /////////////////////////////////////////////
+
+    /**
+     * Subject-relative logic of the recommender
+     *
+     * @param model DataModel
+     */
+    @Override
+    public void execute(DataModel model) {
+        try {
+            ItemSimilarity similarity = new CachingItemSimilarity(new GenericItemSimilarity(new MultiSimilarity(professors, areas, competences, configSim), model), model);
+
+            log.info("Launching recommender");
+            recommender = new CachingRecommender(new GenericItemBasedRecommender(model, similarity));
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Specific configuration of the subject based recommender
+     *
+     * @param config Configuration
+     */
+    @Override
+    public void configure(Configuration config) {
+        // Standard configuration
+        super.configure(config);
+
+        log.info("Setting especific CBFSubject configuration");
 		
 		/*Double useProfessors = config.getDouble("similarity.professorsWeight");
 		if (useProfessors > 0.0) {
 			professors = mm.loadModel("professors");
 			log.info("Professors information loaded");
 		}*/
-		
-		professors = mm.loadModel("professors");
-		log.info("Professors information loaded");
-		
-		Double useCompetences = config.getDouble("similarity.competencesWeight");
-		if (useCompetences > 0.0) {
-			competences = mm.loadModel("competences");
-			log.info("Competences information loaded");
-		}
-		
-		Double useAreas = config.getDouble("similarity.areaWeight");
-		if (useAreas > 0.0) {
-			areas = mm.loadModel("areas");
-			log.info("Area information loaded");
-		}
-		
-		configSim = config.subset("similarity");
-	}
+
+        professors = mm.loadModel("professors");
+        log.info("Professors information loaded");
+
+        Double useCompetences = config.getDouble("similarity.competencesWeight");
+        if (useCompetences > 0.0) {
+            competences = mm.loadModel("competences");
+            log.info("Competences information loaded");
+        }
+
+        Double useAreas = config.getDouble("similarity.areaWeight");
+        if (useAreas > 0.0) {
+            areas = mm.loadModel("areas");
+            log.info("Area information loaded");
+        }
+
+        configSim = config.subset("similarity");
+    }
 }

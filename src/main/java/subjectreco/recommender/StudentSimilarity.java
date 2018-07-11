@@ -27,8 +27,7 @@ import com.google.common.collect.Lists;
 import subjectreco.util.IConfiguration;
 
 /**
- * Content based similarity for users that uses their grades, ratings and
- * branches are specific from Computer Engineering Grade of UCO
+ * Content based similarity for users based on their grades, ratings and branches
  * 
  * @author Aurora Esteban Toscano
  */
@@ -37,7 +36,6 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
 	//////////////////////////////////////////////
 	// -------------------------------- Variables
 	/////////////////////////////////////////////
-	// Data models with subjects related information
 	private static ThreadLocal<DataModel> ratings = new ThreadLocal<>();
 	private static ThreadLocal<DataModel> grades = new ThreadLocal<>();
 	private static DataModel branches;
@@ -60,14 +58,15 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
 	//////////////////////////////////////////////
 	// ---------------------------------- Methods
 	/////////////////////////////////////////////
+
 	/**
-	 * Previous calculations for this hybrid similarity. Initialize the data and
-	 * compute separate similarity metrics of each model.
-	 * 
-	 * @param ratings
-	 * @param grades
+	 * Initialize data models and compute separated similarities
+	 * @param ratings DataModel
+	 * @param grades DataModel
+	 * @param branches DataModel
+	 * @param config Configuration
 	 */
-	public StudentSimilarity(DataModel ratings, DataModel grades, DataModel branches, Configuration config) {
+	StudentSimilarity(DataModel ratings, DataModel grades, DataModel branches, Configuration config) {
 		configure(config);
 		
 		StudentSimilarity.ratings.set(ratings);
