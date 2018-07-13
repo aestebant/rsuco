@@ -22,7 +22,7 @@ import subjectreco.util.RecommenderLoader;
  *
  * @author Aurora Esteban Toscano
  */
-class Run {
+class RunRS {
 
     public static void main(String[] args) {
         Preconditions.checkArgument(args.length == 2, "Use: <bd configuration.xml> <rs configuration.xml>");

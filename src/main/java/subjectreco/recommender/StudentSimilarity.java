@@ -1,15 +1,6 @@
 package subjectreco.recommender;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -22,10 +13,11 @@ import org.apache.mahout.cf.taste.similarity.PreferenceInferrer;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-
 import subjectreco.util.IConfiguration;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * Content based similarity for users based on their grades, ratings and branches
@@ -88,12 +80,14 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         }
 
         log.info("Computing similarities based on student");
-        computeFinalSimilarities1();
+        computeFinalSimilarities2();
     }
 
     /**
-     * Initialize the triangular matrix of similarities between students
+     * Initialize the triangular matrix of similarities between students.
+     * Make parallelization by columns.
      */
+    @SuppressWarnings("unused")
     private void computeFinalSimilarities1() {
 
         LongPrimitiveIterator students = null;
@@ -166,9 +160,22 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         }
     }
 
+    /**
+     * Initialize the triangular matrix of similarities between students.
+     * Make parallelization by rows.
+     */
     private void computeFinalSimilarities2() {
+        class Return {
+            private long student1;
+            private FastByIDMap<Double> similarities;
+            Return(long st1, FastByIDMap<Double> sims) {
+                this.student1 = st1;
+                this.similarities = sims;
+            }
+        }
+
         // Make the calculation of one similarity suitable of parallelize
-        class Wrapper implements Callable<FastByIDMap<Double>> {
+        class Wrapper implements Callable<Return> {
             private long student1;
             private LongPrimitiveIterator others;
 
@@ -178,26 +185,22 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
             }
 
             @Override
-            public FastByIDMap<Double> call() {
-                FastByIDMap<Double> result = new FastByIDMap<>();
+            public Return call() {
+                FastByIDMap<Double> similarities = new FastByIDMap<>();
                 for (LongPrimitiveIterator it = others; it.hasNext(); ) {
                     long student2 = it.next();
                     double similarity = computeSimilarity(student1, student2);
-                    result.put(student2, similarity);
+                    similarities.put(student2, similarity);
                 }
-                return result;
-            }
-
-            public long getStudent() {
-                return student1;
+                return new Return(student1, similarities);
             }
         }
 
         // Parallelize computing of similarities
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        Collection<Callable<FastByIDMap<Double>>> collection = Lists.newArrayList();
+        Collection<Callable<Return>> collection = Lists.newArrayList();
 
-        int count = 1;
+        int count = 0;
         LongPrimitiveIterator students = null;
         try {
             students = ratings.get().getUserIDs();
@@ -207,6 +210,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         assert students != null;
         while (students.hasNext()) {
             long student1 = students.nextLong();
+            count ++;
             // Get all students
             LongPrimitiveIterator others = null;
             try {
@@ -217,19 +221,19 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
             }
             // Only compute similarities in upper diagonal
             others.skip(count);
-
             collection.add(new Wrapper(student1, others));
         }
 
         // Launch parallelization and store result
         try {
-            List<Future<FastByIDMap<Double>>> futures = executor.invokeAll(collection);
-            for (Future<FastByIDMap<Double>> future : futures) {
-                FastByIDMap<Double> result = future.get();
-                similarityMaps.put(student1, result);
+            List<Future<Return>> futures = executor.invokeAll(collection);
+            for (Future<Return> future : futures) {
+                Return result = future.get();
+                similarityMaps.put(result.student1, result.similarities);
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
         executor.shutdown();
         try {
