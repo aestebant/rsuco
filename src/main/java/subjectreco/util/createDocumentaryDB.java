@@ -36,9 +36,7 @@ public class createDocumentaryDB {
 		TYPE_STORED.setStoreTermVectorPositions(true);
 		TYPE_STORED.freeze();
 	}
-	
-	private static String indexDestination = "configuration/documentaryDB";
-	
+
 	public static void main(String[] args) {
 		
 		Analyzer analyzer = createAnalyzer();
@@ -49,6 +47,7 @@ public class createDocumentaryDB {
 		
 		// Open destination of the creation of document store
 		Directory dbStore = null;
+		String indexDestination = "configuration/documentaryDB";
 		try {
 			dbStore = FSDirectory.open(Paths.get(indexDestination));
 		} catch (IOException e1) {
@@ -63,7 +62,7 @@ public class createDocumentaryDB {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		
+		assert writer != null;
 		Connection connection = null;
 		Statement st = null;
 		ResultSet rs = null;
@@ -90,13 +89,6 @@ public class createDocumentaryDB {
 		} finally {
 			IOUtils.quietClose(rs, st, connection);
 		}
-		
-		try {
-			dbStore = FSDirectory.open(Paths.get(indexDestination));
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			System.exit(-1);
-		}
 	}
 
 	private static Analyzer createAnalyzer() {
@@ -109,11 +101,10 @@ public class createDocumentaryDB {
 		} catch (IOException e2) {
 			e2.printStackTrace();
 		}
+		assert domainStopSet != null;
 		analyzerConfig.addAll(domainStopSet);
 
 		// Create Spanish analyzer
-		Analyzer analyzer = new SpanishAnalyzer(analyzerConfig);
-		
-		return analyzer;
+		return new SpanishAnalyzer(analyzerConfig);
 	}
 }

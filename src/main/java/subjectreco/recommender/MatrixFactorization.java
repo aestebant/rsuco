@@ -1,15 +1,10 @@
 package subjectreco.recommender;
 
 import org.apache.commons.configuration2.Configuration;
-import org.apache.mahout.cf.taste.impl.recommender.svd.SVDRecommender;
-import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.impl.recommender.svd.Factorizer;
-import org.apache.mahout.cf.taste.impl.recommender.svd.ParallelSGDFactorizer;
-import org.apache.mahout.cf.taste.impl.recommender.svd.RatingSGDFactorizer;
-import org.apache.mahout.cf.taste.impl.recommender.svd.SVDPlusPlusFactorizer;
 import org.apache.mahout.cf.taste.impl.recommender.CachingRecommender;
-import org.apache.mahout.cf.taste.impl.recommender.svd.ALSWRFactorizer;
+import org.apache.mahout.cf.taste.impl.recommender.svd.*;
+import org.apache.mahout.cf.taste.model.DataModel;
 
 
 /**

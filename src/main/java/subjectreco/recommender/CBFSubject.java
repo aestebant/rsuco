@@ -8,7 +8,6 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingItemSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.GenericItemSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
-
 import subjectreco.recommender.subjectSimilarity.MultiSimilarity;
 
 /**
@@ -59,23 +58,17 @@ public class CBFSubject extends ARecommender {
         super.configure(config);
 
         log.info("Setting especific CBFSubject configuration");
-		
-		/*Double useProfessors = config.getDouble("similarity.professorsWeight");
-		if (useProfessors > 0.0) {
-			professors = mm.loadModel("professors");
-			log.info("Professors information loaded");
-		}*/
 
         professors = mm.loadModel("professors");
         log.info("Professors information loaded");
 
-        Double useCompetences = config.getDouble("similarity.competencesWeight");
+        double useCompetences = config.getDouble("similarity.competencesWeight");
         if (useCompetences > 0.0) {
             competences = mm.loadModel("competences");
             log.info("Competences information loaded");
         }
 
-        Double useAreas = config.getDouble("similarity.areaWeight");
+        double useAreas = config.getDouble("similarity.areaWeight");
         if (useAreas > 0.0) {
             areas = mm.loadModel("areas");
             log.info("Area information loaded");

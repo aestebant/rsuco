@@ -10,7 +10,6 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
-
 import subjectreco.util.IConfiguration;
 
 /**
@@ -74,6 +73,7 @@ public class CFStudent extends ARecommender implements IConfiguration {
 
     /**
      * Load specific configuration.
+     *
      * @param config Configuration
      */
     @Override
@@ -84,7 +84,7 @@ public class CFStudent extends ARecommender implements IConfiguration {
         log.info("Loading specific CFStudent configuration");
 
         // Load grades and branches of the users given by ratings
-        Double useGrades = config.getDouble("similarity.gradesWeight");
+        double useGrades = config.getDouble("similarity.gradesWeight");
         if (useGrades > 0.0) {
             log.info("Loading grades data model");
             grades = mm.loadModel("grades");
@@ -95,7 +95,7 @@ public class CFStudent extends ARecommender implements IConfiguration {
             }
         }
 
-        Double useBranch = config.getDouble("similarity.branchWeight");
+        double useBranch = config.getDouble("similarity.branchWeight");
         if (useBranch > 0.0) {
             log.info("Loading branches data model");
             branches = mm.loadModel("branches");

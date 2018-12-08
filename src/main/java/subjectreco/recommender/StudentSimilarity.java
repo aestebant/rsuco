@@ -168,6 +168,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         class Return {
             private long student1;
             private FastByIDMap<Double> similarities;
+
             Return(long st1, FastByIDMap<Double> sims) {
                 this.student1 = st1;
                 this.similarities = sims;
@@ -210,7 +211,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         assert students != null;
         while (students.hasNext()) {
             long student1 = students.nextLong();
-            count ++;
+            count++;
             // Get all students
             LongPrimitiveIterator others = null;
             try {
@@ -241,7 +242,6 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
 
 
     }

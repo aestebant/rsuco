@@ -2,7 +2,6 @@ package subjectreco.recommender;
 
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
-
 import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
 
