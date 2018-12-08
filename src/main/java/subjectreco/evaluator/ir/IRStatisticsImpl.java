@@ -1,4 +1,4 @@
-package subjectreco.evaluator;
+package subjectreco.evaluator.ir;
 
 import org.apache.mahout.cf.taste.eval.IRStatistics;
 

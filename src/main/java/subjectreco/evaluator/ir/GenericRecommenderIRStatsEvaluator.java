@@ -1,4 +1,4 @@
-package subjectreco.evaluator;
+package subjectreco.evaluator.ir;
 
 import java.util.List;
 import java.util.Random;

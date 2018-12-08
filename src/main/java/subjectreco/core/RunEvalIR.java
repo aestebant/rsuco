@@ -8,7 +8,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 
 import com.google.common.base.Preconditions;
 
-import subjectreco.evaluator.IREvaluator;
+import subjectreco.evaluator.ir.IREvaluator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
 
