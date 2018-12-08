@@ -1,4 +1,8 @@
-package subjectreco.util;
+package subjectreco.util.mysql;
+
+/**
+ * Copy of Mahout class that optimize access to MySQL database
+ */
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more

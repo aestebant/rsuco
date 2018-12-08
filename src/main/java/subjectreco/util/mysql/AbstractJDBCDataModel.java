@@ -1,4 +1,8 @@
-package subjectreco.util;
+package subjectreco.util.mysql;
+
+/**
+ * Copy of Mahout class that optimize access to MySQL database
+ */
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,12 +29,10 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 
-import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 
 import com.google.common.collect.Lists;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.Refreshable;

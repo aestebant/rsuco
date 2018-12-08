@@ -1,4 +1,4 @@
-package subjectreco.util;
+package subjectreco.util.mysql;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more

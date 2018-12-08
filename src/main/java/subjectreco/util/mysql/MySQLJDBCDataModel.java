@@ -1,4 +1,8 @@
-package subjectreco.util;
+package subjectreco.util.mysql;
+
+/**
+ * Copy of Mahout class that optimize access to MySQL database
+ */
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,12 +21,7 @@ package subjectreco.util;
  * limitations under the License.
  */
 
-import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
-import javax.sql.PooledConnection;
-
-import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.impl.common.jdbc.AbstractJDBCComponent;
 
 /**
  * <p>
