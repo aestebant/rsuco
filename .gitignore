@@ -1,9 +1,7 @@
-/target/
-/results/
-/out/
-/.idea/workspace.xml
-/.idea/usage.statistics.xml
-/.idea/tasks.xml
-/.idea/kotlinc.xml
-/.idea/libraries/
-/.idea/artifacts/
+target/*
+results/*
+.idea/*
+!.idea/compiler.xml
+!.idea/misc.xml
+!.idea/modules.xml
+!.idea/vsc.xml
