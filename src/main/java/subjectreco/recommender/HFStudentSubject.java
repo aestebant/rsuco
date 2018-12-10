@@ -1,9 +1,5 @@
 package subjectreco.recommender;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -15,6 +11,10 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -44,8 +44,10 @@ public class HFStudentSubject extends ARecommender {
     @Override
     public void execute(DataModel model) {
 
-        userReco.execute(model);
-        itemReco.execute(model);
+        if (wUserReco > 0.0)
+            userReco.execute(model);
+        if (wUserReco < 1.0)
+            itemReco.execute(model);
 
         // Combine two recommenders using Mahout Recommender interface
         setRecommender();
@@ -106,8 +108,13 @@ public class HFStudentSubject extends ARecommender {
 
             @Override
             public float estimatePreference(long userID, long itemID) throws TasteException {
-                float userEst = userReco.recommender.estimatePreference(userID, itemID);
-                float itemEst = itemReco.recommender.estimatePreference(userID, itemID);
+                float userEst = Float.NaN;
+                float itemEst = Float.NaN;
+
+                if (wUserReco > 0.0)
+                    userEst = userReco.recommender.estimatePreference(userID, itemID);
+                if (wUserReco < 1.0)
+                    itemEst = itemReco.recommender.estimatePreference(userID, itemID);
 
                 // If a recommender can't estimate a preference, take it as 0
                 userEst = Float.isNaN(userEst) ? 0f : userEst;
@@ -119,14 +126,18 @@ public class HFStudentSubject extends ARecommender {
 
             @Override
             public void setPreference(long userID, long itemID, float value) throws TasteException {
-                userReco.recommender.setPreference(userID, itemID, value);
-                itemReco.recommender.setPreference(userID, itemID, value);
+                if (wUserReco > 0.0)
+                    userReco.recommender.setPreference(userID, itemID, value);
+                if (wUserReco < 1.0)
+                    itemReco.recommender.setPreference(userID, itemID, value);
             }
 
             @Override
             public void removePreference(long userID, long itemID) throws TasteException {
-                userReco.recommender.removePreference(userID, itemID);
-                itemReco.recommender.removePreference(userID, itemID);
+                if (wUserReco > 0.0)
+                    userReco.recommender.removePreference(userID, itemID);
+                if (wUserReco < 1.0)
+                    itemReco.recommender.removePreference(userID, itemID);
             }
 
             @Override
@@ -154,12 +165,15 @@ public class HFStudentSubject extends ARecommender {
             System.exit(-1);
         }
 
-        // Student content based subjectreco.recommender
-        userReco = new CFStudent();
-        // Subject content based subjectreco.recommender
-        itemReco = new CBFSubject();
-
-        userReco.configure(config.subset("cfstudent"));
-        itemReco.configure(config.subset("cbfsubject"));
+        if (wUserReco > 0.0) {
+            // Student content based subjectreco.recommender
+            userReco = new CFStudent();
+            userReco.configure(config.subset("cfstudent"));
+        }
+        if (wUserReco < 1.0) {
+            // Subject content based subjectreco.recommender
+            itemReco = new CBFSubject();
+            itemReco.configure(config.subset("cbfsubject"));
+        }
     }
 }

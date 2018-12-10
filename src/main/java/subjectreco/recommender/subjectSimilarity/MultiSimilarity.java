@@ -30,6 +30,8 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
     // -------------------------------- Variables
     /////////////////////////////////////////////
     private static ThreadLocal<DataModel> professors = new ThreadLocal<>();
+    private static ThreadLocal<DataModel> competences = new ThreadLocal<>();
+    private static ThreadLocal<DataModel> departments = new ThreadLocal<>();
 
     // Single criteria similarities
     private static ItemSimilarity professorsSim;
@@ -61,14 +63,16 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
         configure(config);
 
         MultiSimilarity.professors.set(professors);
+        MultiSimilarity.competences.set(competences);
+        MultiSimilarity.departments.set(departments);
 
         try {
             if (wProfessors > 0.0)
-                professorsSim = new CachingItemSimilarity(new ProfessorsSimilarity(professors, config), professors);
+                professorsSim = new CachingItemSimilarity(new ProfessorsSimilarity(MultiSimilarity.professors.get(), config), MultiSimilarity.professors.get());
             if (wCompetences > 0.0)
-                competencesSim = new CachingItemSimilarity(new CompetencesSimilarity(competences, config), competences);
+                competencesSim = new CachingItemSimilarity(new CompetencesSimilarity(MultiSimilarity.competences.get(), config), MultiSimilarity.competences.get());
             if (wArea > 0.0)
-                areaSim = new CachingItemSimilarity(new AreaSimilarity(departments), departments);
+                areaSim = new CachingItemSimilarity(new AreaSimilarity(MultiSimilarity.departments.get()), MultiSimilarity.departments.get());
         } catch (TasteException e) {
             e.printStackTrace();
             System.exit(-1);
@@ -81,12 +85,7 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
     }
 
     private void computeFinalSimilarities() {
-        LongPrimitiveIterator subjects = null;
-        try {
-            subjects = professors.get().getUserIDs();
-        } catch (TasteException e) {
-            e.printStackTrace();
-        }
+        LongPrimitiveIterator rows = getSubjects();
 
         class Wrapper implements Callable<Double[]> {
             private long subject1, subject2;
@@ -103,24 +102,19 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
         }
 
         int count = 1;
-        assert subjects != null;
-        while (subjects.hasNext()) {
-            long subject1 = subjects.nextLong();
-            LongPrimitiveIterator others = null;
-            try {
-                others = professors.get().getUserIDs();
-            } catch (TasteException e) {
-                e.printStackTrace();
-            }
-            assert others != null;
-            others.skip(count);
+        assert rows != null;
+        while (rows.hasNext()) {
+            long subject1 = rows.nextLong();
+            LongPrimitiveIterator cols = getSubjects();
+            assert cols != null;
+            cols.skip(count);
             FastByIDMap<Double> map = new FastByIDMap<>();
 
             ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             Collection<Callable<Double[]>> collection = Lists.newArrayList();
 
-            while (others.hasNext()) {
-                long subject2 = others.next();
+            while (cols.hasNext()) {
+                long subject2 = cols.next();
                 collection.add(new Wrapper(subject1, subject2));
             }
 
@@ -208,6 +202,20 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 
     @Override
     public void refresh(Collection<Refreshable> arg0) {
+    }
+
+    private LongPrimitiveIterator getSubjects() {
+        try {
+            if (professors.get() != null)
+                return professors.get().getUserIDs();
+            else if (competences.get() != null)
+                return competences.get().getUserIDs();
+            else if (departments.get() != null)
+                return departments.get().getUserIDs();
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override

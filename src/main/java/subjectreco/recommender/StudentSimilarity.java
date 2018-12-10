@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import subjectreco.util.IConfiguration;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -29,6 +30,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
     //////////////////////////////////////////////
     // -------------------------------- Variables
     /////////////////////////////////////////////
+
     private static ThreadLocal<DataModel> ratings = new ThreadLocal<>();
     private static ThreadLocal<DataModel> grades = new ThreadLocal<>();
     private static DataModel branches;
@@ -68,8 +70,10 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         StudentSimilarity.branches = branches;
 
         try {
-            ratingsSim = new CachingUserSimilarity(
-                    iRatingsSim.getDeclaredConstructor(DataModel.class).newInstance(StudentSimilarity.ratings.get()), StudentSimilarity.ratings.get());
+            if (wRatings > 0.0) {
+                ratingsSim = new CachingUserSimilarity(
+                        iRatingsSim.getDeclaredConstructor(DataModel.class).newInstance(StudentSimilarity.ratings.get()), StudentSimilarity.ratings.get());
+            }
 
             if (wGrades > 0.0) {
                 gradesSim = new CachingUserSimilarity(
@@ -90,13 +94,6 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
     @SuppressWarnings("unused")
     private void computeFinalSimilarities1() {
 
-        LongPrimitiveIterator students = null;
-        try {
-            students = ratings.get().getUserIDs();
-        } catch (TasteException e) {
-            e.printStackTrace();
-        }
-
         // Make the calculation of one similarity suitable of parallelize
         class Wrapper implements Callable<Double[]> {
             private long student1, student2;
@@ -113,19 +110,14 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         }
 
         int count = 1;
-        assert students != null;
-        while (students.hasNext()) {
-            long student1 = students.nextLong();
+        LongPrimitiveIterator rows = getStudents();
+        assert rows != null;
+        while (rows.hasNext()) {
+            long student1 = rows.nextLong();
             // Get all students
-            LongPrimitiveIterator others = null;
-            try {
-                others = ratings.get().getUserIDs();
-            } catch (TasteException e) {
-                e.printStackTrace();
-                System.exit(-1);
-            }
+            LongPrimitiveIterator cols = getStudents();
             // Only compute similarities in upper diagonal
-            others.skip(count);
+            cols.skip(count);
 
             // Store similarities of student1 with all others in upper diagonal
             FastByIDMap<Double> map = new FastByIDMap<>();
@@ -133,8 +125,8 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
             // Parallelize computing of similarities
             ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
             Collection<Callable<Double[]>> collection = Lists.newArrayList();
-            while (others.hasNext()) {
-                long student2 = others.next();
+            while (cols.hasNext()) {
+                long student2 = cols.next();
                 collection.add(new Wrapper(student1, student2));
             }
 
@@ -178,9 +170,9 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         // Make the calculation of one similarity suitable of parallelize
         class Wrapper implements Callable<Return> {
             private long student1;
-            private LongPrimitiveIterator others;
+            private Iterator<Long> others;
 
-            private Wrapper(long st1, LongPrimitiveIterator others) {
+            private Wrapper(long st1, Iterator<Long> others) {
                 this.student1 = st1;
                 this.others = others;
             }
@@ -188,7 +180,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
             @Override
             public Return call() {
                 FastByIDMap<Double> similarities = new FastByIDMap<>();
-                for (LongPrimitiveIterator it = others; it.hasNext(); ) {
+                for (Iterator<Long> it = others; it.hasNext(); ) {
                     long student2 = it.next();
                     double similarity = computeSimilarity(student1, student2);
                     similarities.put(student2, similarity);
@@ -202,27 +194,16 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         Collection<Callable<Return>> collection = Lists.newArrayList();
 
         int count = 0;
-        LongPrimitiveIterator students = null;
-        try {
-            students = ratings.get().getUserIDs();
-        } catch (TasteException e) {
-            e.printStackTrace();
-        }
-        assert students != null;
-        while (students.hasNext()) {
-            long student1 = students.nextLong();
+        LongPrimitiveIterator cols = getStudents();
+        assert cols != null;
+        while(cols.hasNext()) {
+            long student1 = cols.nextLong();
             count++;
             // Get all students
-            LongPrimitiveIterator others = null;
-            try {
-                others = ratings.get().getUserIDs();
-            } catch (TasteException e) {
-                e.printStackTrace();
-                System.exit(-1);
-            }
+            LongPrimitiveIterator rows = getStudents();
             // Only compute similarities in upper diagonal
-            others.skip(count);
-            collection.add(new Wrapper(student1, others));
+            rows.skip(count);
+            collection.add(new Wrapper(student1, rows));
         }
 
         // Launch parallelization and store result
@@ -258,7 +239,8 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         double simRatings = 0.0, simGrades = 0.0, simBranch = 0.0;
 
         try {
-            simRatings = ratingsSim.userSimilarity(student1, student2);
+            if (wRatings > 0.0)
+                simRatings = ratingsSim.userSimilarity(student1, student2);
             if (wGrades > 0.0)
                 simGrades = gradesSim.userSimilarity(student1, student2);
         } catch (TasteException e) {
@@ -279,6 +261,20 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
         //log.info("Similarity between {} and {} computed = {}", student1, student2, similarity);
 
         return similarity;
+    }
+
+    private LongPrimitiveIterator getStudents() {
+        try {
+            if (ratings.get() != null)
+                return ratings.get().getUserIDs();
+            else if (grades.get() != null)
+                return grades.get().getUserIDs();
+            else if (branches != null)
+                return branches.getUserIDs();
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**

@@ -59,8 +59,11 @@ public class CBFSubject extends ARecommender {
 
         log.info("Setting especific CBFSubject configuration");
 
-        professors = mm.loadModel("professors");
-        log.info("Professors information loaded");
+        double useProfessors = config.getDouble("similarity.professorsWeight");
+        if (useProfessors > 0.0) {
+            professors = mm.loadModel("professors");
+            log.info("Professors information loaded");
+        }
 
         double useCompetences = config.getDouble("similarity.competencesWeight");
         if (useCompetences > 0.0) {
@@ -69,7 +72,8 @@ public class CBFSubject extends ARecommender {
         }
 
         double useAreas = config.getDouble("similarity.areaWeight");
-        if (useAreas > 0.0) {
+        double useContent = config.getDouble("similarity.contentWeight");
+        if (useAreas > 0.0 || useContent == 1.0) {
             areas = mm.loadModel("areas");
             log.info("Area information loaded");
         }
