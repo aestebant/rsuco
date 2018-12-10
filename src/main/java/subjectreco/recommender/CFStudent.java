@@ -22,6 +22,7 @@ public class CFStudent extends ARecommender implements IConfiguration {
     //////////////////////////////////////////////
     // -------------------------------- Variables
     /////////////////////////////////////////////
+    private DataModel ratings = null;
     private DataModel grades = null;
     private DataModel branches = null;
 
@@ -46,7 +47,7 @@ public class CFStudent extends ARecommender implements IConfiguration {
         super.execute(model);
 
         try {
-            UserSimilarity similarity = new CachingUserSimilarity(new StudentSimilarity(normModel, grades, branches, configSim), model);
+            UserSimilarity similarity = new CachingUserSimilarity(new StudentSimilarity(ratings, grades, branches, configSim), model);
 
             log.info("Creating neighborhood");
             switch (neighOpt) {
@@ -82,6 +83,12 @@ public class CFStudent extends ARecommender implements IConfiguration {
         super.configure(config);
 
         log.info("Loading specific CFStudent configuration");
+
+        double useRatings = config.getDouble("similarity.ratingsWeight");
+        if (useRatings > 0.0) {
+            log.info("Loading ratings data model");
+            ratings = mm.loadModel("ratings");
+        }
 
         // Load grades and branches of the users given by ratings
         double useGrades = config.getDouble("similarity.gradesWeight");
