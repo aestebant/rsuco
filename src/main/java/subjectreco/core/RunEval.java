@@ -6,6 +6,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import subjectreco.evaluator.IEvaluator;
 import subjectreco.evaluator.KFoldEvaluator;
 import subjectreco.util.ConfigLoader;
+import subjectreco.util.Loader;
 import subjectreco.util.ModelManage;
 
 import java.io.File;
@@ -26,10 +27,7 @@ public class RunEval {
 
         DataModel model = mm.loadModel("ratings");
 
-        //IEvaluator eval = new SplitEvaluator();
-        IEvaluator eval = new KFoldEvaluator();
-
-        eval.configure(config.subset("evaluator"));
+        IEvaluator eval = Loader.instantiateEvaluator(config);
 
         eval.setRecommenderBuilder(new File(args[2]), mm);
         eval.setDataModel(model);

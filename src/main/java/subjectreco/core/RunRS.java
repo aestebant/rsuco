@@ -15,7 +15,7 @@ import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import subjectreco.recommender.IRecommender;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.RecommenderLoader;
+import subjectreco.util.Loader;
 
 /**
  * Make n recommendations to all users given a recommender configuration
@@ -42,7 +42,7 @@ class RunRS {
         ModelManage mm = new ModelManage(configDM);
 
         // Instantiate the subjectreco.recommender
-        IRecommender recommender = RecommenderLoader.instantiate(configReco, mm);
+        IRecommender recommender = Loader.instantiateRecommender(configReco, mm);
 
         DataModel model = mm.loadModel("ratings");
 
