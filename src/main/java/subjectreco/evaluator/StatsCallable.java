@@ -31,8 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class StatsCallable implements Callable<Void> {
 
-    private static final Logger log = LoggerFactory.getLogger(StatsCallable.class);
-
     private final Callable<Void> delegate;
     private final boolean logStats;
     private final RunningAverageAndStdDev timing;
@@ -57,11 +55,8 @@ final class StatsCallable implements Callable<Void> {
         if (logStats) {
             Runtime runtime = Runtime.getRuntime();
             int average = (int) timing.getAverage();
-            log.info("Average time per recommendation: {}ms", average);
             long totalMemory = runtime.totalMemory();
             long memory = totalMemory - runtime.freeMemory();
-            log.info("Approximate memory used: {}MB / {}MB", memory / 1000000L, totalMemory / 1000000L);
-            log.info("Unable to recommend in {} cases", noEstimateCounter.get());
             reporter.addStats(average, totalMemory, memory, noEstimateCounter);
         }
         return null;

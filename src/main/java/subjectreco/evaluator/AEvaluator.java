@@ -56,11 +56,9 @@ public abstract class AEvaluator implements IEvaluator {
     //////////////////////////////////////////////
     // -------------------------------- Variables
     /////////////////////////////////////////////
-    protected static final Logger log = LoggerFactory.getLogger(AEvaluator.class);
     static Reporter reporter;
 
     RecommenderBuilder recoBuilder;
-    private Boolean recoFromFile = false;
     private File recoPath;
 
     protected DataModel model;
@@ -101,12 +99,8 @@ public abstract class AEvaluator implements IEvaluator {
      * @param mm              ModelManage instance
      */
     public void setRecommenderBuilder(File pathRecommender, ModelManage mm) {
-        log.info("Extracting subjectreco.recommender configuration from {}", pathRecommender.getPath());
-
         recoPath = pathRecommender;
         Configuration recoConfig = ConfigLoader.XMLFile(recoPath);
-
-        recoFromFile = true;
 
         setRecommenderBuilder(recoConfig, mm);
     }
@@ -118,8 +112,6 @@ public abstract class AEvaluator implements IEvaluator {
      * @param mm                ModelManage instance
      */
     public void setRecommenderBuilder(Configuration configRecommender, ModelManage mm) {
-        log.info("Setting the subjectreco.recommender configuration");
-
         // Instantiate the recommender
         final IRecommender recommender = RecommenderLoader.instantiate(configRecommender, mm);
 
@@ -152,23 +144,15 @@ public abstract class AEvaluator implements IEvaluator {
         singleExecution = false;
 
         reporter.startExperiment();
-        String starting = "Starting experiment\n"
-                + "Random split, " + useRandomSplit + "\n"
-                + "Specific threshold, " + useSpecificThreshold + "\n"
-                + "Percentage of data, " + dataPercent;
-
-        log.info(starting);
-        reporter.addLog(starting);
-        if (recoFromFile)
-            reporter.addLog("Recommender configuration, " + recoPath.getAbsolutePath());
-        else
-            reporter.addLog("Recommender configuration, automatically generated");
+        reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
+        reporter.addLog("Random split: %s", useRandomSplit);
+        reporter.addLog("Specific threshold: %s", useSpecificThreshold);
+        reporter.addLog("Percentage of data: %s", dataPercent);
 
         Map<String, RunningAverageAndStdDev> foldsResults = new HashMap<>();
 
         for (int i = 0; i < seeds.size(); ++i) {
-            log.info("Beginning execution with seed {}/{} ({})", i + 1, seeds.size(), seeds.get(i));
-            reporter.addLog("Beginning execution with seed " + (i + 1) + "/" + seeds.size() + " (" + seeds.get(i) + ")");
+            reporter.addLog("Beginning execution with seed %d/%d: %d", i + 1, seeds.size(), seeds.get(i));
 
             execute(seeds.get(i));
 
@@ -183,8 +167,7 @@ public abstract class AEvaluator implements IEvaluator {
             results.put(key, total);
         }
 
-        log.info("All seeds result:\n" + printResults());
-        reporter.addLog("All seeds result");
+        reporter.addLog("All seeds result:");
         reporter.addResults(results);
 
         reporter.finishExperiment();
@@ -209,17 +192,10 @@ public abstract class AEvaluator implements IEvaluator {
 
         if (singleExecution) {
             reporter.startExperiment();
-            String starting = "Starting experiment\n"
-                    + "Random split, " + useRandomSplit + "\n"
-                    + "Specific threshold, " + useSpecificThreshold + "\n"
-                    + "Percentage of data, " + dataPercent;
-
-            log.info(starting);
-            reporter.addLog(starting);
-            if (recoFromFile)
-                reporter.addLog("Recommender configuration, " + recoPath.getAbsolutePath());
-            else
-                reporter.addLog("Recommender configuration, automatically generated");
+            reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
+            reporter.addLog("Random split: %s", useRandomSplit);
+            reporter.addLog("Specific threshold: %s", useSpecificThreshold);
+            reporter.addLog("Percentage of data: %s", dataPercent);
         }
 
         if (random == null)
@@ -324,7 +300,7 @@ public abstract class AEvaluator implements IEvaluator {
         fp = 0;
         fn = 0;
 
-        log.info("Beginning evaluation of {} users", estimateCallables.size());
+        reporter.addLog("Evaluation of %d users", estimateCallables.size());
 
         RunningAverageAndStdDev timing = new FullRunningAverageAndStdDev();
         // Parallel execution
@@ -370,7 +346,7 @@ public abstract class AEvaluator implements IEvaluator {
         int numProcessors = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(numProcessors);
 
-        log.info("Starting timing of {} tasks in {} threads", wrappedCallables.size(), numProcessors);
+        reporter.addLog("Starting timing of %d tasks in %d threads", wrappedCallables.size(), numProcessors);
 
         try {
             List<Future<Void>> futures = executor.invokeAll(wrappedCallables);
@@ -447,9 +423,9 @@ public abstract class AEvaluator implements IEvaluator {
                 } catch (NoSuchUserException nsue) {
                     // It's possible that an item exists in the test data but not training data in
                     // which case NSEE will be thrown. Just ignore it and move on.
-                    log.info("User exists in test data but not training data: {}", testUserID);
+                    reporter.addLog("User exists in test data but not training data: %d", testUserID);
                 } catch (NoSuchItemException nsie) {
-                    log.info("Item exists in test data but not training data: {}", realPref.getItemID());
+                    reporter.addLog("Item exists in test data but not training data: %d", realPref.getItemID());
                 }
                 if (Float.isNaN(estimatedPref)) {
                     noEstimateCounter.incrementAndGet();
@@ -485,14 +461,6 @@ public abstract class AEvaluator implements IEvaluator {
      */
     public Map<String, Double[]> getResults() {
         return results;
-    }
-
-    String printResults() {
-        StringBuilder res = new StringBuilder();
-        for (String key : results.keySet()) {
-            res.append(key).append(": ").append(results.get(key)[0]).append(" +/- ").append(results.get(key)[1]).append("\n");
-        }
-        return res.toString();
     }
 
     /**

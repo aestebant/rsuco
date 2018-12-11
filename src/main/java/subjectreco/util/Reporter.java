@@ -5,32 +5,40 @@ import org.apache.commons.configuration2.Configuration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Reporter implements IConfiguration {
+    private Boolean reportOnConsole;
+    private Boolean reportOnFile;
     private String reportTitle;
     private FileWriter reportFileWriter;
-    private Boolean doReports;
     private String reportLocation;
     private Long initTime;
 
     public void startExperiment() {
-        if (doReports) {
-            initTime = System.currentTimeMillis();
+        initTime = System.currentTimeMillis();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+
+        if (reportOnConsole) {
+            System.out.println("[REPORT]: Starting experiment");
+        }
+        if (reportOnFile) {
             File path = new File(reportLocation);
             if (!path.exists() || !path.isDirectory())
                 path.mkdir();
 
-            String dateString = new Date(System.currentTimeMillis()).toString().replace(':', '.');
-
-            String actualReportTitle = reportTitle + dateString;
-            File reportFile = new File(path + File.separator + actualReportTitle + ".report.csv");
+            String actualReportTitle = reportTitle + "_" + dateString + ".report.txt";
+            File reportFile = new File(path + File.separator + actualReportTitle);
             try {
                 reportFileWriter = new FileWriter(reportFile);
                 reportFileWriter.flush();
-                reportFileWriter.write(dateString + "\n");
+                reportFileWriter.write(dateString + System.lineSeparator());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -38,10 +46,16 @@ public class Reporter implements IConfiguration {
     }
 
     public void finishExperiment() {
-        if (doReports) {
+        double totalTime = (double) (System.currentTimeMillis() - initTime) / 1000.0;
+        String msg = String.format("Total time of executions (s): %f", totalTime);
+
+        if (reportOnConsole) {
+            System.out.println("[REPORT]: " + msg);
+            System.out.println("[REPORT]: Experiment finished");
+        }
+        if (reportOnFile) {
             try {
-                double totalTime = (double) (System.currentTimeMillis() - initTime) / 1000.0;
-                reportFileWriter.write("Total time of execution (s) , " + totalTime);
+                reportFileWriter.write(msg + System.lineSeparator());
                 reportFileWriter.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -49,10 +63,22 @@ public class Reporter implements IConfiguration {
         }
     }
 
-    public void addLog(String log) {
-        if (doReports) {
+    public void addInfo(String msg, Object... args) {
+        String fullMsg = String.format(msg, args);
+        if (reportOnConsole) {
+            System.out.println("[INFO]: " + fullMsg);
+        }
+    }
+
+    public void addLog(String msg, Object... args) {
+        String fullMsg = String.format(msg, args);
+
+        if (reportOnConsole) {
+            System.out.println("[REPORT]: " + fullMsg);
+        }
+        if (reportOnFile) {
             try {
-                reportFileWriter.write(log + "\n");
+                reportFileWriter.write(fullMsg + System.lineSeparator());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -60,12 +86,18 @@ public class Reporter implements IConfiguration {
     }
 
     public void addResults(Map<String, Double[]> results) {
-        if (doReports) {
-            String res = "";
-            for (String key : results.keySet())
-                res = res.concat(key + " +/- , " + results.get(key)[0] + " , " + results.get(key)[1] + "\n");
+        StringBuilder msg = new StringBuilder();
+        for (String key : results.keySet()) {
+            msg.append(String.format("%s: %f +/- %f", key, results.get(key)[0], results.get(key)[1]));
+            msg.append(System.lineSeparator());
+        }
+
+        if (reportOnConsole) {
+            System.out.println(msg.toString());
+        }
+        if (reportOnFile) {
             try {
-                reportFileWriter.write(res);
+                reportFileWriter.write(msg.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -73,16 +105,18 @@ public class Reporter implements IConfiguration {
     }
 
     public void addStats(int average, long totalMemory, long memory, AtomicInteger noEstimateCounter) {
-        if (doReports) {
-            String logAverage = "Average time per recommendation (ms), " + average + "\n";
-            String logTotalMem = "Total memory, " + totalMemory / 1000000L + "\n";
-            String logMemory = "Memory used (MB), " + memory / 1000000L + "\n";
-            String logNoEst = "Unable to recommend, " + noEstimateCounter.get() + "\n";
+        StringBuilder msg = new StringBuilder();
+        msg.append(String.format("Average time per recommendation (ms): %d", average)).append(System.lineSeparator());
+        msg.append(String.format("Total memory (MB): %d", totalMemory/1000000L)).append(System.lineSeparator());
+        msg.append(String.format("Memory used (MB): %d", memory/1000000L)).append(System.lineSeparator());
+        msg.append(String.format("Unable to recommend: %d", noEstimateCounter.get()));
+
+        if (reportOnConsole) {
+            System.out.println(msg.toString());
+        }
+        if (reportOnFile) {
             try {
-                reportFileWriter.write(logAverage);
-                reportFileWriter.write(logTotalMem);
-                reportFileWriter.write(logMemory);
-                reportFileWriter.write(logNoEst);
+                reportFileWriter.write(msg.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -91,8 +125,11 @@ public class Reporter implements IConfiguration {
 
     @Override
     public void configure(Configuration config) {
-        reportLocation = config.getString("reportLocation");
-        reportTitle = config.getString("reportTitle");
-        doReports = config.getBoolean("doReports");
+        reportOnConsole = config.getBoolean("reportOnConsole", true);
+        reportOnFile = config.getBoolean("reportOnFile", false);
+        if (reportOnFile) {
+            reportLocation = config.getString("reportLocation");
+            reportTitle = config.getString("reportTitle");
+        }
     }
 }

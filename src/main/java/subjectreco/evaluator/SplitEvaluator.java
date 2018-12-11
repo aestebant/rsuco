@@ -40,9 +40,7 @@ public class SplitEvaluator extends AEvaluator {
 
         Preconditions.checkArgument(trainPercent > 0.0 && trainPercent < 1.0, "Invalid train percentage: " + trainPercent);
 
-        log.info("Beginning evaluation using {} of {}", trainPercent, model);
-        String info = "Train percentage, " + trainPercent;
-        reporter.addLog(info);
+        reporter.addLog("Beginning evaluation using %f of %s", trainPercent, model);
 
         int numUsers = 0;
         try {
@@ -83,7 +81,6 @@ public class SplitEvaluator extends AEvaluator {
         getEvaluation(testPrefs, recommender);
 
         reporter.addResults(results);
-        log.info("Execution results:\n" + printResults());
 
         if (singleExecution)
             reporter.finishExperiment();

@@ -45,9 +45,7 @@ public class KFoldEvaluator extends AEvaluator {
 
         Preconditions.checkArgument(k >= 2, "Invalid number of folds: " + k);
 
-        log.info("Beginning evaluation using {} folds of {}", k, model);
-        String info = "Number of folds, " + k;
-        reporter.addLog(info);
+        reporter.addLog("Beginning evaluation using %d folds of %s", k, model);
 
         int numUsers = 0;
         try {
@@ -83,9 +81,7 @@ public class KFoldEvaluator extends AEvaluator {
         Map<String, RunningAverageAndStdDev> foldsRes = new HashMap<>();
         // Rotate the folds. Each time only one is used for testing and the rest k-1 folds are used for training
         for (int k = 0; k < this.k; k++) {
-            log.info("Beginning evaluation of fold {}/{}", k + 1, this.k);
-            String info2 = "Beginning evaluation of fold " + (k + 1) + "/" + this.k;
-            reporter.addLog(info2);
+            reporter.addLog("Beginning evaluation of fold %d/%d", k+1, this.k);
 
             FastByIDMap<PreferenceArray> trainPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
             FastByIDMap<PreferenceArray> testPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
@@ -128,7 +124,7 @@ public class KFoldEvaluator extends AEvaluator {
 
             getEvaluation(testPrefs, recommender);
 
-            log.info("One fold results:\n" + printResults());
+            //log.info("One fold results:\n" + printResults());
             reporter.addResults(results);
 
             for (String key : results.keySet()) {
@@ -142,7 +138,6 @@ public class KFoldEvaluator extends AEvaluator {
             results.put(key, res);
         }
 
-        log.info("All folds results:\n" + printResults());
         reporter.addLog("All folds results");
         reporter.addResults(results);
 
