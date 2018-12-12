@@ -101,8 +101,8 @@ public class SplitEvaluator extends AEvaluator {
             e.printStackTrace();
         }
 
-        List<Preference> shuffledPrefs = new ArrayList<>();
         assert prefs != null;
+        List<Preference> shuffledPrefs = new ArrayList<>(prefs.length());
         for (Preference pref : prefs) {
             shuffledPrefs.add(pref);
         }
@@ -160,13 +160,15 @@ public class SplitEvaluator extends AEvaluator {
             }
         }
 
-        int limit = (int) Math.round(1 - (prefs.length() * trainPercent));
+        int limit = (int) Math.round(prefs.length() * (1-trainPercent)); // Get test percent of subjects
+        // Distribute 2*limit first subjects between train and test
         for (int i = 0; i < 2 * limit; i += 2) {
             Preference newPref1 = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
             oneUserTrainPrefs.add(newPref1);
             Preference newPref2 = new GenericPreference(userID, orderedPrefs.get(i + 1).getItemID(), orderedPrefs.get(i + 1).getValue());
             oneUserTestPrefs.add(newPref2);
         }
+        // Rest of subjects to train (those that are left over)
         for (int i = 2 * limit; i < prefs.length(); ++i) {
             Preference newPref = new GenericPreference(userID, orderedPrefs.get(i).getItemID(), orderedPrefs.get(i).getValue());
             oneUserTrainPrefs.add(newPref);
