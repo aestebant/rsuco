@@ -1,17 +1,18 @@
 <configuration>
-	<evaluator>
-		<computeRMSE>True</computeRMSE>
-		<computeMAE>False</computeMAE>
-		<computeBinaryClassification>False</computeBinaryClassification>
-		<useRandomSplit>False</useRandomSplit>
-		<useSpecificThreshold>True</useSpecificThreshold>
+	<evaluator name="subjectreco.evaluator.SplitEvaluator">
+		<computeRMSE>true</computeRMSE>
+		<computeMAE>false</computeMAE>
+		<computeBinaryClassification>false</computeBinaryClassification>
+		<useRandomSplit>false</useRandomSplit>
+		<useSpecificThreshold>true</useSpecificThreshold>
 		<dataPercent>1.0</dataPercent>
 		<trainPercent>0.8</trainPercent>
-		<foldsNumber>10</foldsNumber>
+		<foldsNumber>2</foldsNumber>
 		<reporter>
-			<reportLocation>results</reportLocation>
+            <reportOnConsole>true</reportOnConsole>
+            <reportOnFile>false</reportOnFile>
+			<reportLocation>results/prueba</reportLocation>
 			<reportTitle>RS</reportTitle>
-			<doReports>true</doReports>
 		</reporter>
 	</evaluator>
 </configuration>

@@ -1,0 +1,37 @@
+<configuration>
+	<recommender name = 'subjectreco.recommender.HFStudentSubject'>
+		<cfstudent>
+			<normalize>false</normalize>
+			<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
+			SpearmanCorrelationSimilarity	/ UncenteredCosineSimilarity -->
+			<similarity>
+				<ratingsSimilarity>org.apache.mahout.cf.taste.impl.similarity.SpearmanCorrelationSimilarity</ratingsSimilarity>
+				<gradesSimilarity>org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity</gradesSimilarity>
+				<ratingsWeight>0.27</ratingsWeight>
+				<gradesWeight>0.45</gradesWeight>
+				<branchWeight>0.28</branchWeight>
+			</similarity>
+			<!-- NearestNUserNeighborhood / ThresholdUserNeighborhood -->
+			<neighborhood>
+				<!-- 1: NearestNUserNeighborhood, 2: ThresholdUserNeighborhood -->
+				<option>1</option>
+				<size>41</size> <!-- for option 1 -->
+			</neighborhood>
+		</cfstudent>
+		
+		<cbfsubject>
+			<similarity>
+				<!-- TanimotoCoefficientSimilarity / LogLikelihoodSimilarity -->
+				<professorsSimilarity>org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity</professorsSimilarity>
+				<competencesSimilarity>org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity</competencesSimilarity>
+				<professorsWeight>0.694</professorsWeight>
+				<contentWeight>0.222</contentWeight>
+				<areaWeight>0.070</areaWeight>
+				<competencesWeight>0.014</competencesWeight>
+				<documentaryDB>documentaryDB</documentaryDB>
+			</similarity>
+		</cbfsubject>
+		
+		<studentWeight>0.621</studentWeight>
+	</recommender>
+</configuration>

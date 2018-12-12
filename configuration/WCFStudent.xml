@@ -1,6 +1,0 @@
-<configuration>
-	<recommender>CFStudent</recommender>
-	<ratingsWeight>0.0</ratingsWeight>
-	<gradesWeight>1.0</gradesWeight>
-	<branchWeight>0.0</branchWeight>
-</configuration>
