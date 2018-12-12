@@ -30,8 +30,10 @@ public class Reporter implements IConfiguration {
         }
         if (reportOnFile) {
             File path = new File(reportLocation);
-            if (!path.exists() || !path.isDirectory())
-                path.mkdir();
+            if (!path.exists() || !path.isDirectory()) {
+                if (!path.mkdir()) throw new RuntimeException("Error creating report directory");
+            }
+
 
             String actualReportTitle = reportTitle + "_" + dateString + ".report.txt";
             File reportFile = new File(path + File.separator + actualReportTitle);
