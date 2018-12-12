@@ -6,6 +6,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
 
 import subjectreco.util.ConfigLoader;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.ModelManage;
 import subjectreco.util.PathLoader;
 
@@ -25,8 +26,7 @@ public class WrappedHFEval {
         l.setLevel(org.apache.log4j.Level.WARN);
 
         Configuration evalConfig = ConfigLoader.XMLFile(PathLoader.getConfigPath("JCLECEvaluator.xml"));
-        evaluator = new SplitEvaluator();
-        evaluator.configure(evalConfig.subset("evaluator"));
+        evaluator = ClassInstantiator.instantiateEvaluator(evalConfig);
 
         recoConfig = ConfigLoader.XMLFile(PathLoader.getConfigPath("JCLECRecommender.xml"));
 

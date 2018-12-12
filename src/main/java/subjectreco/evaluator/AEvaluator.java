@@ -35,8 +35,6 @@ import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.common.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -44,7 +42,7 @@ import com.google.common.collect.Lists;
 import subjectreco.recommender.IRecommender;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.RecommenderLoader;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.Reporter;
 
 /**
@@ -113,7 +111,7 @@ public abstract class AEvaluator implements IEvaluator {
      */
     public void setRecommenderBuilder(Configuration configRecommender, ModelManage mm) {
         // Instantiate the recommender
-        final IRecommender recommender = RecommenderLoader.instantiate(configRecommender, mm);
+        final IRecommender recommender = ClassInstantiator.instantiateRecommender(configRecommender, mm);
 
         // Lambda constructor for RecommenderBuilder
         recoBuilder = model -> {

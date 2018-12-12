@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author Aurora Esteban Toscano
  */
-public class Loader {
+public class ClassInstantiator {
     //////////////////////////////////////////////
     // ----------------------------------- Methods
     /////////////////////////////////////////////

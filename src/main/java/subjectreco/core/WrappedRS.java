@@ -13,7 +13,7 @@ import com.google.common.base.Preconditions;
 import subjectreco.recommender.IRecommender;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.RecommenderLoader;
+import subjectreco.util.ClassInstantiator;
 
 /**
  * Encapsulate the logic to run any recommender from a external application and return the recommendations in an
@@ -39,7 +39,7 @@ public class WrappedRS {
         // Load recommender configuration
         Configuration recoConfig = ConfigLoader.XMLFile(new File(args[1]));
         // Instantiate the RS
-        IRecommender recommender = RecommenderLoader.instantiate(recoConfig, mm);
+        IRecommender recommender = ClassInstantiator.instantiateRecommender(recoConfig, mm);
 
         recommender.execute(model);
 

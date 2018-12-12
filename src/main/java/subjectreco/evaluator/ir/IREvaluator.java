@@ -10,7 +10,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import subjectreco.recommender.IRecommender;
 import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
-import subjectreco.util.RecommenderLoader;
+import subjectreco.util.ClassInstantiator;
 
 import java.util.Random;
 
@@ -79,7 +79,7 @@ public class IREvaluator implements IConfiguration {
      */
     public void setRecommenderBuilder(Configuration recommenderConf, ModelManage mm) {
 
-        final IRecommender recommender = RecommenderLoader.instantiate(recommenderConf, mm);
+        final IRecommender recommender = ClassInstantiator.instantiateRecommender(recommenderConf, mm);
 
         // Lambda constructor for recommenderBuilder
         recommenderBuilder = model -> {
