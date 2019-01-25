@@ -142,7 +142,8 @@ public abstract class AEvaluator implements IEvaluator {
         singleExecution = false;
 
         reporter.startExperiment();
-        reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
+        if (recoPath != null)
+            reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
         reporter.addLog("Random split: %s", useRandomSplit);
         reporter.addLog("Specific threshold: %s", useSpecificThreshold);
         reporter.addLog("Percentage of data: %s", dataPercent);
@@ -190,7 +191,8 @@ public abstract class AEvaluator implements IEvaluator {
 
         if (singleExecution) {
             reporter.startExperiment();
-            reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
+            if(recoPath != null)
+                reporter.addLog("RS configuration extracted from %s", recoPath.getPath());
             reporter.addLog("Random split: %s", useRandomSplit);
             reporter.addLog("Specific threshold: %s", useSpecificThreshold);
             reporter.addLog("Percentage of data: %s", dataPercent);

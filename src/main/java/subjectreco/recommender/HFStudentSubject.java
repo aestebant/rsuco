@@ -43,6 +43,7 @@ public class HFStudentSubject extends ARecommender {
      */
     @Override
     public void execute(DataModel model) {
+        super.execute(model);
 
         if (wUserReco > 0.0)
             userReco.execute(model);
@@ -142,7 +143,7 @@ public class HFStudentSubject extends ARecommender {
 
             @Override
             public DataModel getDataModel() {
-                return userReco.recommender.getDataModel();
+                return normModel;
             }
 
         };
