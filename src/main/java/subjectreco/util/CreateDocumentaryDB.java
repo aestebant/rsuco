@@ -24,7 +24,13 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.mahout.common.IOUtils;
 
-public class createDocumentaryDB {
+/**
+ * Create in a previous step the documentary database that store the terms of the courses' contents.
+ * This class will create a directory "configuration/documentaryDB", necessary to execute the CBF recommender based on
+ * contents.
+ * @author Aurora Esteban Toscano
+ */
+public class CreateDocumentaryDB {
 
 	// Indexed, tokenized, stored type of indexing
 	private static final FieldType TYPE_STORED = new FieldType();
