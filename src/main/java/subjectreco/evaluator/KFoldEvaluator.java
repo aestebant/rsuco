@@ -86,11 +86,10 @@ public class KFoldEvaluator extends AEvaluator {
             FastByIDMap<PreferenceArray> trainPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
             FastByIDMap<PreferenceArray> testPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
 
-            for (int i = 0; i < folds.size(); i++) {
+            // The testing fold
+            testPrefs = folds.get(k);
 
-                // The testing fold
-                testPrefs = folds.get(k);
-
+            for (int i = 0; i < this.k; i++) {
                 // Build the training set from the remaining folds
                 if (i != k) {
                     for (Entry<Long, PreferenceArray> entry : folds.get(i).entrySet()) {
