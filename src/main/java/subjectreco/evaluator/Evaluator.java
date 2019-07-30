@@ -30,4 +30,6 @@ public interface Evaluator {
     void setOrderedbyNPrefsSubjects(ModelManage mm);
 
     Map<String, Double[]> getResults();
+
+    void configure(Configuration configuration);
 }
