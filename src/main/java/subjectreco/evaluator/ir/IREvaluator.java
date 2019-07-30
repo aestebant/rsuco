@@ -6,11 +6,11 @@ import org.apache.mahout.cf.taste.eval.IRStatistics;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderIRStatsEvaluator;
 import org.apache.mahout.cf.taste.model.DataModel;
-
-import subjectreco.recommender.IRecommender;
+import org.apache.mahout.cf.taste.recommender.Recommender;
+import subjectreco.recommender.BaseRS;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
-import subjectreco.util.ClassInstantiator;
 
 import java.util.Random;
 
@@ -79,12 +79,12 @@ public class IREvaluator implements IConfiguration {
      */
     public void setRecommenderBuilder(Configuration recommenderConf, ModelManage mm) {
 
-        final IRecommender recommender = ClassInstantiator.instantiateRecommender(recommenderConf, mm);
+        final Recommender recommender = ClassInstantiator.instantiateRecommender(recommenderConf, mm);
 
         // Lambda constructor for recommenderBuilder
         recommenderBuilder = model -> {
-            recommender.execute(model);
-            return recommender.getRecommender();
+            ((BaseRS)recommender).execute(model);
+            return recommender;
         };
     }
 

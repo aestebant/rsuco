@@ -1,21 +1,20 @@
 package subjectreco.evaluator;
 
+import org.apache.commons.configuration2.Configuration;
+import org.apache.mahout.cf.taste.model.DataModel;
+import subjectreco.util.IConfiguration;
+import subjectreco.util.ModelManage;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.configuration2.Configuration;
-import org.apache.mahout.cf.taste.model.DataModel;
-
-import subjectreco.util.IConfiguration;
-import subjectreco.util.ModelManage;
 
 /**
  * Common interface for diference-based evaluations
  *
  * @author Aurora Esteban Toscano
  */
-public interface IEvaluator extends IConfiguration {
+public interface Evaluator extends IConfiguration {
 
     void setDataModel(DataModel model);
 

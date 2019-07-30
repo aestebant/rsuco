@@ -6,7 +6,7 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
-import subjectreco.evaluator.IEvaluator;
+import subjectreco.evaluator.Evaluator;
 import subjectreco.recommender.BaseRS;
 
 import java.lang.reflect.InvocationTargetException;
@@ -65,17 +65,17 @@ public class ClassInstantiator {
         return instance;
     }
 
-    public static IEvaluator instantiateEvaluator(Configuration config) {
+    public static Evaluator instantiateEvaluator(Configuration config) {
         String className = config.getString("evaluator[@name]");
-        Class<? extends IEvaluator> evaluator = null;
+        Class<? extends Evaluator> evaluator = null;
         try {
-            evaluator = Class.forName(className).asSubclass(IEvaluator.class);
+            evaluator = Class.forName(className).asSubclass(Evaluator.class);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
         // Instantiate the given class recommender
-        IEvaluator instance = null;
+        Evaluator instance = null;
         try {
             assert evaluator != null;
             instance = evaluator.getConstructor().newInstance();

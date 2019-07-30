@@ -1,9 +1,6 @@
 package subjectreco.evaluator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import com.google.common.base.Preconditions;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
@@ -16,14 +13,16 @@ import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
-import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Hold out validation of a recommender
  *
  * @author Aurora Esteban Toscano
  */
-public class SplitEvaluator extends AEvaluator {
+public class SplitEvaluator extends BaseEvaluator {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables

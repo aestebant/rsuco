@@ -1,14 +1,13 @@
 package subjectreco.evaluator;
 
-import java.util.Map;
-
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
-
-import subjectreco.util.ConfigLoader;
 import subjectreco.util.ClassInstantiator;
+import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
 import subjectreco.util.PathLoader;
+
+import java.util.Map;
 
 /**
  * Encapsulate all the needed logic to evaluate a recommender from an external algorithm
@@ -19,7 +18,7 @@ public class WrappedHFEval {
 
     private Configuration recoConfig;
     private static ModelManage mm;
-    private IEvaluator evaluator;
+    private Evaluator evaluator;
 
     public WrappedHFEval() {
         org.apache.log4j.Logger l = org.apache.log4j.LogManager.getRootLogger();

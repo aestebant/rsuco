@@ -1,55 +1,38 @@
 package subjectreco.evaluator;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
-import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.common.RunningAverage;
-import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.*;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.common.IOUtils;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-
-import subjectreco.recommender.IRecommender;
+import subjectreco.recommender.BaseRS;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.ClassInstantiator;
 import subjectreco.util.Reporter;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base code for the difference-based evaluation
  * @author Aurora Esteban Toscano
  */
-public abstract class AEvaluator implements IEvaluator {
+public abstract class BaseEvaluator implements Evaluator {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -86,7 +69,7 @@ public abstract class AEvaluator implements IEvaluator {
 
     Map<String, Double[]> results;
 
-    AEvaluator() {
+    BaseEvaluator() {
         reporter = new Reporter();
     }
 
@@ -111,12 +94,12 @@ public abstract class AEvaluator implements IEvaluator {
      */
     public void setRecommenderBuilder(Configuration configRecommender, ModelManage mm) {
         // Instantiate the recommender
-        final IRecommender recommender = ClassInstantiator.instantiateRecommender(configRecommender, mm);
+        final Recommender recommender = ClassInstantiator.instantiateRecommender(configRecommender, mm);
 
         // Lambda constructor for RecommenderBuilder
         recoBuilder = model -> {
-            recommender.execute(model);
-            return recommender.getRecommender();
+            ((BaseRS) recommender).execute(model);
+            return recommender;
         };
     }
 
