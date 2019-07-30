@@ -1,4 +1,4 @@
-package subjectreco.recommender.subjectSimilarity;
+package subjectreco.recommender.similarity;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration2.Configuration;
@@ -7,11 +7,12 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.similarity.CachingItemSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.IConfiguration;
 
 import java.util.Collection;
@@ -24,20 +25,22 @@ import java.util.concurrent.*;
  *
  * @author Aurora Esteban Toscano
  */
-public class MultiSimilarity implements ItemSimilarity, IConfiguration {
+public class CourseSimilarity implements ItemSimilarity, IConfiguration {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
     /////////////////////////////////////////////
     private static ThreadLocal<DataModel> professors = new ThreadLocal<>();
     private static ThreadLocal<DataModel> competences = new ThreadLocal<>();
-    private static ThreadLocal<DataModel> departments = new ThreadLocal<>();
+    private static DataModel areas;
+
+    private String professorsSimilarityName;
+    private String competencesSimilarityName;
 
     // Single criteria similarities
-    private static ItemSimilarity professorsSim;
-    private static ItemSimilarity areaSim;
-    private static ItemSimilarity competencesSim;
-    private static ItemSimilarity contentSim;
+    private static UserSimilarity professorSimilarity;
+    private static UserSimilarity competenceSimilarity;
+    private static ItemSimilarity contentSimilarity;
 
     // Importance of each criteria in final similarity in [0,1]
     private double wProfessors;
@@ -50,40 +53,34 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 
     private final FastByIDMap<FastByIDMap<Double>> similarityMaps = new FastByIDMap<>();
 
-    protected static final Logger log = LoggerFactory.getLogger(MultiSimilarity.class);
+    protected static final Logger log = LoggerFactory.getLogger(CourseSimilarity.class);
 
     //////////////////////////////////////////////
-    // ---------------------------------- Methods
+    // ------------------------------ Constructor
     /////////////////////////////////////////////
-
-    /**
-     * Initialize single criteria similarities
-     */
-    public MultiSimilarity(DataModel professors, DataModel departments, DataModel competences, Configuration config) {
+    public CourseSimilarity(DataModel professors, DataModel areas, DataModel competences, Configuration config) {
         configure(config);
 
-        MultiSimilarity.professors.set(professors);
-        MultiSimilarity.competences.set(competences);
-        MultiSimilarity.departments.set(departments);
+        CourseSimilarity.professors.set(professors);
+        CourseSimilarity.competences.set(competences);
+        CourseSimilarity.areas = areas;
 
-        try {
-            if (wProfessors > 0.0)
-                professorsSim = new CachingItemSimilarity(new ProfessorsSimilarity(MultiSimilarity.professors.get(), config), MultiSimilarity.professors.get());
-            if (wCompetences > 0.0)
-                competencesSim = new CachingItemSimilarity(new CompetencesSimilarity(MultiSimilarity.competences.get(), config), MultiSimilarity.competences.get());
-            if (wArea > 0.0)
-                areaSim = new CachingItemSimilarity(new AreaSimilarity(MultiSimilarity.departments.get()), MultiSimilarity.departments.get());
-        } catch (TasteException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        if (wProfessors > 0d)
+            professorSimilarity = ClassInstantiator.instantiateUserSimilarity(professorsSimilarityName,
+                    CourseSimilarity.professors.get());
+        if (wCompetences > 0d)
+            competenceSimilarity = ClassInstantiator.instantiateUserSimilarity(competencesSimilarityName,
+                    CourseSimilarity.competences.get());
         if (wContent > 0.0)
-            contentSim = new ContentSimilarity(config);
+            contentSimilarity = new ContentSimilarity(config);
 
         log.info("Computing similarity based on subjects");
         computeFinalSimilarities();
     }
 
+    //////////////////////////////////////////////
+    // ---------------------------------- Methods
+    /////////////////////////////////////////////
     private void computeFinalSimilarities() {
         LongPrimitiveIterator rows = getSubjects();
 
@@ -146,17 +143,17 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
         double sim1 = 0.0, sim2 = 0.0, sim3 = 0.0, sim4 = 0.0;
         try {
             if (wProfessors > 0.0)
-                sim1 = professorsSim.itemSimilarity(subject1, subject2);
+                sim1 = professorSimilarity.userSimilarity(subject1, subject2);
             if (wContent > 0.0)
-                sim2 = contentSim.itemSimilarity(subject1, subject2);
-            if (wArea > 0.0)
-                sim3 = areaSim.itemSimilarity(subject1, subject2);
+                sim2 = contentSimilarity.itemSimilarity(subject1, subject2);
             if (wCompetences > 0.0)
-                sim4 = competencesSim.itemSimilarity(subject1, subject2);
+                sim4 = competenceSimilarity.userSimilarity(subject1, subject2);
         } catch (TasteException e) {
             e.printStackTrace();
             System.exit(-1);
         }
+        if (wArea > 0.0)
+            sim3 = areaSimilarity(subject1, subject2);
 
         double similarity = wProfessors * sim1 + wContent * sim2 + wArea * sim3 + wCompetences * sim4;
         if (similarity > 1.0)
@@ -165,6 +162,26 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
             similarity = -1.0;
 
         return similarity;
+    }
+
+    /**
+     * Compute similarity between two subjects based on their areas in common
+     * Since each one belongs to one department, expected similarity is 0 or 1
+     */
+    private double areaSimilarity(long subject1, long subject2) {
+        FastIDSet area1 = null, area2 = null;
+        try {
+            area1 = areas.getItemIDsFromUser(subject1);
+            area2 = areas.getItemIDsFromUser(subject2);
+        } catch (TasteException e) {
+            e.printStackTrace();
+        }
+        assert area1 != null;
+        assert area2 != null;
+        int interSize = area1.intersectionSize(area2);
+        int unionSize = area1.size() + area2.size() - interSize;
+
+        return (double) interSize / (double) unionSize;
     }
 
     @Override
@@ -210,8 +227,8 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
                 return professors.get().getUserIDs();
             else if (competences.get() != null)
                 return competences.get().getUserIDs();
-            else if (departments.get() != null)
-                return departments.get().getUserIDs();
+            else if (areas != null)
+                return areas.getUserIDs();
         } catch (TasteException e) {
             e.printStackTrace();
         }
@@ -220,15 +237,18 @@ public class MultiSimilarity implements ItemSimilarity, IConfiguration {
 
     @Override
     public void configure(Configuration config) {
-        this.wProfessors = config.getDouble("professorsWeight");
-        this.wContent = config.getDouble("contentWeight");
-        this.wArea = config.getDouble("areaWeight");
-        this.wCompetences = config.getDouble("competencesWeight");
+        wProfessors = config.getDouble("professorsWeight");
+        wContent = config.getDouble("contentWeight");
+        wArea = config.getDouble("areaWeight");
+        wCompetences = config.getDouble("competencesWeight");
 
         double checkSum = wProfessors + wContent + wArea + wCompetences;
         if (checkSum < 0.9999 || checkSum > 1.0001) {
             System.err.println("Total weigth of the criteria for Subject similarity must sum 1 (current " + checkSum + ")");
             System.exit(-1);
         }
+
+        professorsSimilarityName = config.getString("professorsSimilarity");
+        competencesSimilarityName = config.getString("competencesSimilarity");
     }
 }

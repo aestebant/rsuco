@@ -11,6 +11,7 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
+import subjectreco.util.ModelManage;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,15 +23,35 @@ import java.util.List;
  *
  * @author Aurora Esteban Toscano
  */
-public class HFStudentSubject extends ARecommender {
+public class HFStudentCourse extends BaseRS {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
     /////////////////////////////////////////////
-    private CFStudent userReco;
-    private CBFSubject itemReco;
+    private CFStudent cf;
+    private CBFCourse cbf;
 
     private float wUserReco;
+
+    public HFStudentCourse(Configuration configuration, ModelManage mm) {
+        super(configuration, mm);
+
+        wUserReco = configuration.getFloat("studentWeight");
+
+        if (wUserReco < 0.0 || wUserReco > 1.0) {
+            System.err.println("Student weight in HFStudentSubject must be in [0,1] (current " + wUserReco + ")");
+            System.exit(-1);
+        }
+
+        if (wUserReco > 0.0) {
+            // Student content based subjectreco.recommender
+            cf = new CFStudent(configuration.subset("cfstudent"), mm);
+        }
+        if (wUserReco < 1.0) {
+            // Subject content based subjectreco.recommender
+            cbf = new CBFCourse(configuration.subset("cbfsubject"), mm);
+        }
+    }
 
     //////////////////////////////////////////////
     // ---------------------------------- Methods
@@ -46,9 +67,9 @@ public class HFStudentSubject extends ARecommender {
         super.execute(model);
 
         if (wUserReco > 0.0)
-            userReco.execute(model);
+            cf.execute(model);
         if (wUserReco < 1.0)
-            itemReco.execute(model);
+            cbf.execute(model);
 
         // Combine two recommenders using Mahout Recommender interface
         setRecommender();
@@ -58,7 +79,7 @@ public class HFStudentSubject extends ARecommender {
      * Instantiate the recommender using Mahout Recommender interface and combining student and course based recommenders
      */
     private void setRecommender() {
-        recommender = new Recommender() {
+        delegate = new Recommender() {
 
             @Override
             public void refresh(Collection<Refreshable> alreadyRefreshed) {
@@ -113,9 +134,9 @@ public class HFStudentSubject extends ARecommender {
                 float itemEst = Float.NaN;
 
                 if (wUserReco > 0.0)
-                    userEst = userReco.recommender.estimatePreference(userID, itemID);
+                    userEst = cf.estimatePreference(userID, itemID);
                 if (wUserReco < 1.0)
-                    itemEst = itemReco.recommender.estimatePreference(userID, itemID);
+                    itemEst = cbf.estimatePreference(userID, itemID);
 
                 // If a recommender can't estimate a preference, take it as 0
                 userEst = Float.isNaN(userEst) ? 0f : userEst;
@@ -128,53 +149,23 @@ public class HFStudentSubject extends ARecommender {
             @Override
             public void setPreference(long userID, long itemID, float value) throws TasteException {
                 if (wUserReco > 0.0)
-                    userReco.recommender.setPreference(userID, itemID, value);
+                    cf.setPreference(userID, itemID, value);
                 if (wUserReco < 1.0)
-                    itemReco.recommender.setPreference(userID, itemID, value);
+                    cbf.setPreference(userID, itemID, value);
             }
 
             @Override
             public void removePreference(long userID, long itemID) throws TasteException {
                 if (wUserReco > 0.0)
-                    userReco.recommender.removePreference(userID, itemID);
+                    cf.removePreference(userID, itemID);
                 if (wUserReco < 1.0)
-                    itemReco.recommender.removePreference(userID, itemID);
+                    cbf.removePreference(userID, itemID);
             }
 
             @Override
             public DataModel getDataModel() {
-                return normModel;
+                return baseForRecommendations;
             }
-
         };
-    }
-
-    /**
-     * Load specific configuration of this recommender
-     *
-     * @param config Configuration
-     */
-    @Override
-    public void configure(Configuration config) {
-        // Standard configuration
-        super.configure(config);
-
-        wUserReco = config.getFloat("studentWeight");
-
-        if (wUserReco < 0.0 || wUserReco > 1.0) {
-            System.err.println("Student weight in HFStudentSubject must be in [0,1] (current " + wUserReco + ")");
-            System.exit(-1);
-        }
-
-        if (wUserReco > 0.0) {
-            // Student content based subjectreco.recommender
-            userReco = new CFStudent();
-            userReco.configure(config.subset("cfstudent"));
-        }
-        if (wUserReco < 1.0) {
-            // Subject content based subjectreco.recommender
-            itemReco = new CBFSubject();
-            itemReco.configure(config.subset("cbfsubject"));
-        }
     }
 }

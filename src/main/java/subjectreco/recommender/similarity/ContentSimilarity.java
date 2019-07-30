@@ -1,4 +1,4 @@
-package subjectreco.recommender.subjectSimilarity;
+package subjectreco.recommender.similarity;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -23,7 +23,6 @@ import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import subjectreco.util.IConfiguration;
 import subjectreco.util.PathLoader;
 
 import java.io.File;
@@ -37,7 +36,7 @@ import java.util.*;
  *
  * @author Aurora Esteban Toscano
  */
-public class ContentSimilarity implements ItemSimilarity, IConfiguration {
+public class ContentSimilarity implements ItemSimilarity {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -45,7 +44,6 @@ public class ContentSimilarity implements ItemSimilarity, IConfiguration {
 
     protected static final Logger log = LoggerFactory.getLogger(ContentSimilarity.class);
 
-    private File database;
     private IndexReader reader;
     private IndexSearcher searcher;
 
@@ -55,7 +53,12 @@ public class ContentSimilarity implements ItemSimilarity, IConfiguration {
     // ---------------------------------- Methods
     /////////////////////////////////////////////
     ContentSimilarity(Configuration config) {
-        configure(config);
+
+        File database = PathLoader.getConfigPath(config.getString("documentaryDB"));
+        if (!database.isDirectory()) {
+            System.err.println("Documentary database doesn't exist in " + database.getAbsolutePath());
+            System.exit(-1);
+        }
 
         // Access to the document store
         Directory dir = null;
@@ -197,14 +200,5 @@ public class ContentSimilarity implements ItemSimilarity, IConfiguration {
      */
     private double computeCosineSimilarity(RealVector v1, RealVector v2) {
         return (v1.dotProduct(v2)) / (v1.getNorm() * v2.getNorm());
-    }
-
-    @Override
-    public void configure(Configuration config) {
-        database = PathLoader.getConfigPath(config.getString("documentaryDB"));
-        if (!database.isDirectory()) {
-            System.err.println("Documentary database doesn't exist in " + database.getAbsolutePath());
-            System.exit(-1);
-        }
     }
 }

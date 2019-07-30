@@ -1,4 +1,4 @@
-package subjectreco.recommender;
+package subjectreco.recommender.similarity;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration2.Configuration;
@@ -7,13 +7,12 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.PreferenceInferrer;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import subjectreco.util.IConfiguration;
+import subjectreco.util.ClassInstantiator;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -25,7 +24,7 @@ import java.util.concurrent.*;
  *
  * @author Aurora Esteban Toscano
  */
-public class StudentSimilarity implements UserSimilarity, IConfiguration {
+public class StudentSimilarity implements UserSimilarity {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -35,11 +34,11 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
     private static ThreadLocal<DataModel> grades = new ThreadLocal<>();
     private static DataModel branches;
 
-    private static UserSimilarity ratingsSim;
-    private Class<? extends UserSimilarity> iRatingsSim;
+    private String ratingSimilarityName;
+    private String gradeSimilarityName;
 
-    private static UserSimilarity gradesSim;
-    private Class<? extends UserSimilarity> iGradesSim;
+    private static UserSimilarity ratingSimilarity;
+    private static UserSimilarity gradeSimilarity;
 
     // Ratings importance in the face of grades (between 0 and 1)
     private double wRatings;
@@ -51,9 +50,8 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
     protected static final Logger log = LoggerFactory.getLogger(StudentSimilarity.class);
 
     //////////////////////////////////////////////
-    // ---------------------------------- Methods
+    // ------------------------------ Constructor
     /////////////////////////////////////////////
-
     /**
      * Initialize data models and compute separated similarities
      *
@@ -62,37 +60,34 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
      * @param branches DataModel
      * @param config   Configuration
      */
-    StudentSimilarity(DataModel ratings, DataModel grades, DataModel branches, Configuration config) {
+    public StudentSimilarity(DataModel ratings, DataModel grades, DataModel branches, Configuration config) {
         configure(config);
 
         StudentSimilarity.ratings.set(ratings);
         StudentSimilarity.grades.set(grades);
         StudentSimilarity.branches = branches;
 
-        try {
-            if (wRatings > 0.0) {
-                ratingsSim = new CachingUserSimilarity(
-                        iRatingsSim.getDeclaredConstructor(DataModel.class).newInstance(StudentSimilarity.ratings.get()), StudentSimilarity.ratings.get());
-            }
-
-            if (wGrades > 0.0) {
-                gradesSim = new CachingUserSimilarity(
-                        iGradesSim.getDeclaredConstructor(DataModel.class).newInstance(StudentSimilarity.grades.get()), StudentSimilarity.grades.get());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        if (wRatings > 0.0)
+            ratingSimilarity = ClassInstantiator.instantiateUserSimilarity(ratingSimilarityName,
+                    StudentSimilarity.ratings.get());
+        if (wGrades > 0.0)
+            gradeSimilarity = ClassInstantiator.instantiateUserSimilarity(gradeSimilarityName,
+                    StudentSimilarity.grades.get());
 
         log.info("Computing similarities based on student");
-        computeFinalSimilarities2();
+        computeSimilaritiesByRows();
     }
 
+
+    //////////////////////////////////////////////
+    // ---------------------------------- Methods
+    /////////////////////////////////////////////
     /**
      * Initialize the triangular matrix of similarities between students.
      * Make parallelization by columns.
      */
     @SuppressWarnings("unused")
-    private void computeFinalSimilarities1() {
+    private void computeSimilaritiesByCols() {
 
         // Make the calculation of one similarity suitable of parallelize
         class Wrapper implements Callable<Double[]> {
@@ -156,7 +151,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
      * Initialize the triangular matrix of similarities between students.
      * Make parallelization by rows.
      */
-    private void computeFinalSimilarities2() {
+    private void computeSimilaritiesByRows() {
         class Return {
             private long student1;
             private FastByIDMap<Double> similarities;
@@ -240,16 +235,15 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
 
         try {
             if (wRatings > 0.0)
-                simRatings = ratingsSim.userSimilarity(student1, student2);
+                simRatings = ratingSimilarity.userSimilarity(student1, student2);
             if (wGrades > 0.0)
-                simGrades = gradesSim.userSimilarity(student1, student2);
+                simGrades = gradeSimilarity.userSimilarity(student1, student2);
         } catch (TasteException e) {
             e.printStackTrace();
             System.exit(-1);
         }
-
         if (wBranch > 0.0)
-            simBranch = branchSim(student1, student2);
+            simBranch = branchSimilarity(student1, student2);
 
         // Similarities are combined whit a given weight between 0 and 1
         double similarity = simRatings * wRatings + simGrades * wGrades + simBranch * wBranch;
@@ -284,7 +278,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
      * @param student2 ID of another student
      * @return specialty based similarity between users
      */
-    private double branchSim(long student1, long student2) {
+    private double branchSimilarity(long student1, long student2) {
         FastIDSet branch1 = null, branch2 = null;
         try {
             branch1 = branches.getItemIDsFromUser(student1);
@@ -328,9 +322,7 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
      *
      * @param config Configuration
      */
-    @SuppressWarnings("unchecked")
-    @Override
-    public void configure(Configuration config) {
+    private void configure(Configuration config) {
         log.info("Loading configuration of student based similarity");
 
         this.wRatings = config.getDouble("ratingsWeight");
@@ -342,12 +334,8 @@ public class StudentSimilarity implements UserSimilarity, IConfiguration {
             System.err.println("Total weigth of the criterias must sum 1 (current " + checkSum + ")");
             System.exit(-1);
         }
-        try {
-            this.iRatingsSim = (Class<? extends UserSimilarity>) Class.forName(config.getString("ratingsSimilarity"));
-            if (this.wGrades > 0.0)
-                this.iGradesSim = (Class<? extends UserSimilarity>) Class.forName(config.getString("gradesSimilarity"));
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+
+        ratingSimilarityName = config.getString("ratingsSimilarity");
+        gradeSimilarityName = config.getString("gradesSimilarity");
     }
 }

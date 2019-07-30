@@ -10,14 +10,15 @@ import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
-import subjectreco.util.IConfiguration;
+import subjectreco.recommender.similarity.StudentSimilarity;
+import subjectreco.util.ModelManage;
 
 /**
  * Content based recommender for students: hybrid similarity with ratings, grades and specialty
  *
  * @author Aurora Esteban Toscano
  */
-public class CFStudent extends ARecommender implements IConfiguration {
+public class CFStudent extends BaseRS {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -29,9 +30,52 @@ public class CFStudent extends ARecommender implements IConfiguration {
     private Configuration configSim;
 
     private UserNeighborhood neighborhood;
-    private int neighOpt;
-    private int neighSize;
-    private double neighThres;
+    private int neighborhoodMethod;
+    private int topN;
+    private double threshold;
+
+    //////////////////////////////////////////////
+    // ------------------------------ Constructor
+    /////////////////////////////////////////////
+    public CFStudent(Configuration configuration, ModelManage mm) {
+        super(configuration, mm);
+
+        log.info("Loading specific CFStudent configuration");
+
+        boolean useRatings = configuration.getDouble("similarity.ratingsWeight") > 0d;
+        if (useRatings) {
+            log.info("Loading ratings data model");
+            ratings = mm.loadModel("ratings");
+            if (normalization) {
+                log.info("Normalizing ratings");
+                ratings = mm.subtractiveNormalization(ratings);
+            }
+        }
+
+        boolean useGrades = configuration.getDouble("similarity.gradesWeight") > 0d;
+        if (useGrades) {
+            log.info("Loading grades data model");
+            grades = mm.loadModel("grades");
+            if (normalization) {
+                log.info("Normalizing grades");
+                grades = mm.subtractiveNormalization(grades);
+            }
+        }
+
+        boolean useBranch = configuration.getDouble("similarity.branchWeight") > 0d;
+        if (useBranch) {
+            log.info("Loading branches data model");
+            branches = mm.loadModel("branches");
+        }
+
+        this.neighborhoodMethod = configuration.getInt("neighborhood.option");
+        if (neighborhoodMethod == 1)
+            this.topN = configuration.getInt("neighborhood.size");
+        else if (neighborhoodMethod == 2)
+            this.threshold = configuration.getDouble("neighborhood.threshold");
+
+        configSim = configuration.subset("similarity");
+    }
 
     //////////////////////////////////////////////
     // ---------------------------------- Methods
@@ -47,74 +91,28 @@ public class CFStudent extends ARecommender implements IConfiguration {
         super.execute(model);
 
         try {
-            UserSimilarity similarity = new CachingUserSimilarity(new StudentSimilarity(ratings, grades, branches, configSim), model);
+            UserSimilarity similarity = new CachingUserSimilarity(new StudentSimilarity(ratings, grades, branches,
+                    configSim), model);
 
             log.info("Creating neighborhood");
-            switch (neighOpt) {
+            switch (neighborhoodMethod) {
                 case 1:
-                    this.neighborhood = new CachingUserNeighborhood(new NearestNUserNeighborhood(neighSize, similarity, normModel), normModel);
+                    this.neighborhood = new CachingUserNeighborhood(new NearestNUserNeighborhood(topN, similarity,
+                            baseForRecommendations), baseForRecommendations);
                     break;
-
                 case 2:
-                    this.neighborhood = new CachingUserNeighborhood(new ThresholdUserNeighborhood(neighThres, similarity, normModel), normModel);
+                    this.neighborhood = new CachingUserNeighborhood(new ThresholdUserNeighborhood(threshold, similarity,
+                            baseForRecommendations), baseForRecommendations);
                     break;
-
                 default:
                     System.err.println("Neighborhood option does not exists");
                     System.exit(1);
             }
 
-            log.info("Launching recommender");
-            recommender = new CachingRecommender(new GenericUserBasedRecommender(model, neighborhood, similarity));
-
+            log.info("Launching recommender system");
+            delegate = new CachingRecommender(new GenericUserBasedRecommender(model, neighborhood, similarity));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-    /**
-     * Load specific configuration.
-     *
-     * @param config Configuration
-     */
-    @Override
-    public void configure(Configuration config) {
-        // Standard configuration
-        super.configure(config);
-
-        log.info("Loading specific CFStudent configuration");
-
-        double useRatings = config.getDouble("similarity.ratingsWeight");
-        if (useRatings > 0.0) {
-            log.info("Loading ratings data model");
-            ratings = mm.loadModel("ratings");
-        }
-
-        // Load grades and branches of the users given by ratings
-        double useGrades = config.getDouble("similarity.gradesWeight");
-        if (useGrades > 0.0) {
-            log.info("Loading grades data model");
-            grades = mm.loadModel("grades");
-
-            if (normalize) {
-                log.info("Normalizing grades");
-                grades = mm.subtractiveNormalization(grades);
-            }
-        }
-
-        double useBranch = config.getDouble("similarity.branchWeight");
-        if (useBranch > 0.0) {
-            log.info("Loading branches data model");
-            branches = mm.loadModel("branches");
-        }
-
-        this.neighOpt = config.getInt("neighborhood.option");
-        if (neighOpt == 1)
-            this.neighSize = config.getInt("neighborhood.size");
-        else if (neighOpt == 2)
-            this.neighThres = config.getDouble("neighborhood.threshold");
-
-        configSim = config.subset("similarity");
-    }
-
 }

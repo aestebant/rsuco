@@ -12,7 +12,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
  *
  * @author Aurora Esteban Toscano
  */
-public class MatrixFactorization extends ARecommender {
+public class MatrixFactorization extends BaseRS {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -20,6 +20,19 @@ public class MatrixFactorization extends ARecommender {
     private Factorizer factorizer;
     private int factOpt, nFeatures, nIterations, nEpochs;
     private double lambda;
+
+    public MatrixFactorization(Configuration configuration) {
+        super(configuration);
+        factOpt = configuration.getInt("factorizer.option");
+
+        this.nFeatures = configuration.getInt("factorizer.nFeatures");
+        if (factOpt == 1 || factOpt == 3 || factOpt == 4)
+            this.nIterations = configuration.getInt("factorizer.nIterations");
+        if (factOpt == 1 || factOpt == 2)
+            this.lambda = configuration.getDouble("factorizer.lambda");
+        if (factOpt == 2)
+            this.nEpochs = configuration.getInt("factorizer.nEpochs");
+    }
 
     //////////////////////////////////////////////
     // ---------------------------------- Methods
@@ -32,6 +45,8 @@ public class MatrixFactorization extends ARecommender {
      */
     @Override
     public void execute(DataModel model) {
+        super.execute(model);
+
         try {
             switch (factOpt) {
                 case 1:
@@ -53,31 +68,9 @@ public class MatrixFactorization extends ARecommender {
                     System.err.println("Factorizer option does not exists");
                     System.exit(1);
             }
-
-            recommender = new CachingRecommender(new SVDRecommender(model, factorizer));
+            delegate = new CachingRecommender(new SVDRecommender(model, factorizer));
         } catch (TasteException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * The specific configuration of the factorizer is given by a index
-     *
-     * @param config Configuration
-     */
-    @Override
-    public void configure(Configuration config) {
-        // Standard configuration
-        super.configure(config);
-
-        factOpt = config.getInt("factorizer.option");
-
-        this.nFeatures = config.getInt("factorizer.nFeatures");
-        if (factOpt == 1 || factOpt == 3 || factOpt == 4)
-            this.nIterations = config.getInt("factorizer.nIterations");
-        if (factOpt == 1 || factOpt == 2)
-            this.lambda = config.getDouble("factorizer.lambda");
-        if (factOpt == 2)
-            this.nEpochs = config.getInt("factorizer.nEpochs");
     }
 }
