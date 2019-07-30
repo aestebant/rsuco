@@ -1,6 +1,6 @@
 package subjectreco.core;
 
-import subjectreco.evaluator.WrappedHFEval;
+import subjectreco.util.WrappedHFEval;
 
 public class Pru {
 

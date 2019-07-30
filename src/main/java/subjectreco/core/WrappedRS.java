@@ -1,19 +1,18 @@
 package subjectreco.core;
 
-import java.io.File;
-import java.util.List;
-
+import com.google.common.base.Preconditions;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
-
-import com.google.common.base.Preconditions;
-
-import subjectreco.recommender.IRecommender;
+import org.apache.mahout.cf.taste.recommender.Recommender;
+import subjectreco.recommender.BaseRS;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.ClassInstantiator;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * Encapsulate the logic to run any recommender from a external application and return the recommendations in an
@@ -39,16 +38,16 @@ public class WrappedRS {
         // Load recommender configuration
         Configuration recoConfig = ConfigLoader.XMLFile(new File(args[1]));
         // Instantiate the RS
-        IRecommender recommender = ClassInstantiator.instantiateRecommender(recoConfig, mm);
+        Recommender recommender = ClassInstantiator.instantiateRecommender(recoConfig, mm);
 
-        recommender.execute(model);
+        ((BaseRS)recommender).execute(model);
 
         // Obtain the recommendations for the specified user
         long userID = Long.parseLong(args[2]);
         int nRecommendations = Integer.parseInt(args[3]);
         List<RecommendedItem> result = null;
         try {
-            result = recommender.getRecommender().recommend(userID, nRecommendations);
+            result = recommender.recommend(userID, nRecommendations);
         } catch (TasteException e) {
             e.printStackTrace();
         }

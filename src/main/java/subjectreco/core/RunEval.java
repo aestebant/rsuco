@@ -3,7 +3,7 @@ package subjectreco.core;
 import com.google.common.base.Preconditions;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
-import subjectreco.evaluator.IEvaluator;
+import subjectreco.evaluator.Evaluator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ClassInstantiator;
 import subjectreco.util.ModelManage;
@@ -26,7 +26,7 @@ public class RunEval {
 
         DataModel model = mm.loadModel("ratings");
 
-        IEvaluator eval = ClassInstantiator.instantiateEvaluator(config);
+        Evaluator eval = ClassInstantiator.instantiateEvaluator(config);
 
         eval.setRecommenderBuilder(new File(args[2]), mm);
         eval.setDataModel(model);

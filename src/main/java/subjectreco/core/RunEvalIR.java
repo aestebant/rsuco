@@ -1,16 +1,14 @@
 package subjectreco.core;
 
-import java.io.File;
-
+import com.google.common.base.Preconditions;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.eval.IRStatistics;
 import org.apache.mahout.cf.taste.model.DataModel;
-
-import com.google.common.base.Preconditions;
-
 import subjectreco.evaluator.ir.IREvaluator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
+
+import java.io.File;
 
 /**
  * Evaluate a subjectreco.recommender configuration by Information Retrieval stats
@@ -42,7 +40,12 @@ class RunEvalIR {
 		evaluator.execute();
 		
 		IRStatistics results = evaluator.getStats();
-		
-		System.out.println("nDCG:\t" + results.getNormalizedDiscountedCumulativeGain());
+
+		System.out.println("Precision: " + results.getPrecision());
+		System.out.println("Recall:    " + results.getRecall());
+		System.out.println("F1 measure:" + results.getF1Measure());
+		System.out.println("nDCG:      " + results.getNormalizedDiscountedCumulativeGain());
+		System.out.println("Fall out:  " + results.getFallOut());
+		System.out.println("Reach:     " + results.getReach());
 	}
 }

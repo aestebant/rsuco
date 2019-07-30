@@ -1,21 +1,20 @@
 package subjectreco.core;
 
-import java.io.File;
-import java.util.List;
-import java.util.Scanner;
-
+import com.google.common.base.Preconditions;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
-
-import com.google.common.base.Preconditions;
-
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
-import subjectreco.recommender.IRecommender;
+import org.apache.mahout.cf.taste.recommender.Recommender;
+import subjectreco.recommender.BaseRS;
+import subjectreco.util.ClassInstantiator;
 import subjectreco.util.ConfigLoader;
 import subjectreco.util.ModelManage;
-import subjectreco.util.ClassInstantiator;
+
+import java.io.File;
+import java.util.List;
+import java.util.Scanner;
 
 /**
  * Make n recommendations to all users given a recommender configuration
@@ -42,7 +41,7 @@ class RunRS {
         ModelManage mm = new ModelManage(configDM);
 
         // Instantiate the subjectreco.recommender
-        IRecommender recommender = ClassInstantiator.instantiateRecommender(configReco, mm);
+        Recommender rs = ClassInstantiator.instantiateRecommender(configReco, mm);
 
         DataModel model = mm.loadModel("ratings");
 
@@ -50,17 +49,18 @@ class RunRS {
         int obtainedRecos = 0;
         int nUsers = 0;
 
-        recommender.execute(model);
+        ((BaseRS) rs).execute(model);
+        //rs.execute(model);
 
         // Show recommendations
         System.out.println("User --> Recommendations");
         if (userID == -1) {
             LongPrimitiveIterator users;
             try {
-                users = recommender.getRecommender().getDataModel().getUserIDs();
+                users = rs.getDataModel().getUserIDs();
                 while (users.hasNext()) {
                     long id = users.nextLong();
-                    List<RecommendedItem> recommendations = recommender.getRecommender().recommend(id, expectedRecos);
+                    List<RecommendedItem> recommendations = rs.recommend(id, expectedRecos);
                     obtainedRecos += recommendations.size();
                     nUsers++;
                     System.out.println(id + " --> " + recommendations);
@@ -71,7 +71,7 @@ class RunRS {
             }
         } else {
             try {
-                System.out.println(userID + " --> " + recommender.getRecommender().recommend(userID, expectedRecos));
+                System.out.println(userID + " --> " + rs.recommend(userID, expectedRecos));
                 nUsers++;
             } catch (TasteException e) {
                 e.printStackTrace();
