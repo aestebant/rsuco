@@ -2,7 +2,6 @@ package subjectreco.evaluator;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
-import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
 
 import java.io.File;
@@ -14,7 +13,7 @@ import java.util.Map;
  *
  * @author Aurora Esteban Toscano
  */
-public interface Evaluator extends IConfiguration {
+public interface Evaluator {
 
     void setDataModel(DataModel model);
 

@@ -132,11 +132,13 @@ public class SplitEvaluator extends BaseEvaluator {
      *
      * @param userID id that identifies the user in the dataModel
      */
+    //TODO: This method produces specially bad results respect random or k-fold
     private void splitOneUserPrefsOrdered(long userID) {
         Preconditions.checkNotNull(orderedSubjects, "Required first: setOrderedbyNPrefsSubjects");
 
         List<Preference> oneUserTrainPrefs = new ArrayList<>();
         List<Preference> oneUserTestPrefs = new ArrayList<>();
+
         PreferenceArray prefs = null;
         try {
             prefs = model.getPreferencesFromUser(userID);
@@ -182,7 +184,6 @@ public class SplitEvaluator extends BaseEvaluator {
      *
      * @param config Configuration
      */
-    @Override
     public void configure(Configuration config) {
         super.configure(config);
         trainPercent = config.getDouble("trainPercent");

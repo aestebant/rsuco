@@ -79,10 +79,7 @@ public class KFoldEvaluator extends BaseEvaluator {
             reporter.addLog("Beginning evaluation of fold %d/%d", k+1, this.k);
 
             FastByIDMap<PreferenceArray> trainPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
-            FastByIDMap<PreferenceArray> testPrefs = new FastByIDMap<>(1 + (int) (dataPercent * numUsers));
-
-            // The testing fold
-            testPrefs = folds.get(k);
+            FastByIDMap<PreferenceArray> testPrefs = folds.get(k);
 
             for (int i = 0; i < this.k; i++) {
                 // Build the training set from the remaining folds
@@ -158,7 +155,6 @@ public class KFoldEvaluator extends BaseEvaluator {
         } catch (TasteException e) {
             e.printStackTrace();
         }
-
         assert prefs != null;
         List<Preference> orderedPrefs = new ArrayList<>(prefs.length());
 
