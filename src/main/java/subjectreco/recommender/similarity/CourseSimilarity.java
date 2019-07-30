@@ -13,7 +13,6 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import subjectreco.util.ClassInstantiator;
-import subjectreco.util.IConfiguration;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.concurrent.*;
  *
  * @author Aurora Esteban Toscano
  */
-public class CourseSimilarity implements ItemSimilarity, IConfiguration {
+public class CourseSimilarity implements ItemSimilarity {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -235,8 +234,7 @@ public class CourseSimilarity implements ItemSimilarity, IConfiguration {
         return null;
     }
 
-    @Override
-    public void configure(Configuration config) {
+    private void configure(Configuration config) {
         wProfessors = config.getDouble("professorsWeight");
         wContent = config.getDouble("contentWeight");
         wArea = config.getDouble("areaWeight");

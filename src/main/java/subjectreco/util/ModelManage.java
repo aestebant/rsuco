@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author Aurora Esteban Toscano
  */
-public class ModelManage implements IConfiguration {
+public class ModelManage {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
@@ -323,7 +323,6 @@ public class ModelManage implements IConfiguration {
     /**
      * Configure parameters of the MySQL database where data models are allocated
      */
-    @Override
     public void configure(Configuration config) {
         this.config = config.subset("model");
 

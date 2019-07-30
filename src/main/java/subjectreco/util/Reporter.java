@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Reporter implements IConfiguration {
+public class Reporter {
     private Boolean reportOnConsole;
     private Boolean reportOnFile;
     private String reportTitle;
@@ -125,7 +125,6 @@ public class Reporter implements IConfiguration {
         }
     }
 
-    @Override
     public void configure(Configuration config) {
         reportOnConsole = config.getBoolean("reportOnConsole", true);
         reportOnFile = config.getBoolean("reportOnFile", false);

@@ -9,7 +9,6 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import subjectreco.recommender.BaseRS;
 import subjectreco.util.ClassInstantiator;
-import subjectreco.util.IConfiguration;
 import subjectreco.util.ModelManage;
 
 import java.util.Random;
@@ -19,7 +18,7 @@ import java.util.Random;
  *
  * @author Aurora Esteban Toscano
  */
-public class IREvaluator implements IConfiguration {
+public class IREvaluator {
 
     //////////////////////////////////////////////
     // -------------------------------- Variables
