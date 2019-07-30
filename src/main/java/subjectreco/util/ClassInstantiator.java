@@ -1,13 +1,18 @@
 package subjectreco.util;
 
 import org.apache.commons.configuration2.Configuration;
+import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
+import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.recommender.Recommender;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import subjectreco.evaluator.IEvaluator;
-import subjectreco.recommender.IRecommender;
+import subjectreco.recommender.BaseRS;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Manage a IRecommender instantiation
+ * Utility class for instantiate classes in a generic way.
  *
  * @author Aurora Esteban Toscano
  */
@@ -17,54 +22,70 @@ public class ClassInstantiator {
     /////////////////////////////////////////////
 
     /**
-     * Instantiate a IRecommender given its configuration.
+     * Instantiate a Recommender
      */
-    public static IRecommender instantiateRecommender(Configuration config, ModelManage mm) {
-        // Get the name of the class of the IRecommender
-        Class<? extends IRecommender> recoClass = null;
+    public static Recommender instantiateRecommender(Configuration config, ModelManage mm) {
+        String className = config.getString("recommender[@name]");
+        Class<? extends BaseRS> rs = null;
         try {
-            recoClass = (Class<? extends IRecommender>) Class.forName(config.getString("recommender[@name]"));
+            rs = Class.forName(className).asSubclass(BaseRS.class);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        // Instantiate the given class recommender
-        IRecommender recommender = null;
+        Recommender instance = null;
         try {
-            assert recoClass != null;
-            recommender = recoClass.getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e1) {
-            e1.printStackTrace();
+            assert rs != null;
+            instance = rs.getDeclaredConstructor(Configuration.class, ModelManage.class)
+                    .newInstance(config.subset("recommender"), mm);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
         }
 
-        assert recommender != null;
-        recommender.setModelManage(mm);
-        recommender.configure(config.subset("recommender"));
+        return instance;
+    }
 
-        return recommender;
+    public static UserSimilarity instantiateUserSimilarity(String className, DataModel dataModel) {
+        Class<? extends UserSimilarity> similarity = null;
+        try {
+            similarity = Class.forName(className).asSubclass(UserSimilarity.class);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        UserSimilarity instance = null;
+        try {
+            assert similarity != null;
+            instance = new CachingUserSimilarity(similarity.getDeclaredConstructor(DataModel.class)
+                    .newInstance(dataModel), dataModel);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | TasteException e) {
+            e.printStackTrace();
+        }
+
+        return instance;
     }
 
     public static IEvaluator instantiateEvaluator(Configuration config) {
-        // Get the name of the class of the IRecommender
-        Class<? extends IEvaluator> recoClass = null;
+        String className = config.getString("evaluator[@name]");
+        Class<? extends IEvaluator> evaluator = null;
         try {
-            recoClass = (Class<? extends IEvaluator>) Class.forName(config.getString("evaluator[@name]"));
+            evaluator = Class.forName(className).asSubclass(IEvaluator.class);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
         // Instantiate the given class recommender
-        IEvaluator evaluator = null;
+        IEvaluator instance = null;
         try {
-            assert recoClass != null;
-            evaluator = recoClass.getConstructor().newInstance();
+            assert evaluator != null;
+            instance = evaluator.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e1) {
             e1.printStackTrace();
         }
 
-        assert evaluator != null;
-        evaluator.configure(config.subset("evaluator"));
+        assert instance != null;
+        instance.configure(config.subset("evaluator"));
 
-        return evaluator;
+        return instance;
     }
 }
