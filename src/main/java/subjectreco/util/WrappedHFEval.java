@@ -1,11 +1,8 @@
-package subjectreco.evaluator;
+package subjectreco.util;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.mahout.cf.taste.model.DataModel;
-import subjectreco.util.ClassInstantiator;
-import subjectreco.util.ConfigLoader;
-import subjectreco.util.ModelManage;
-import subjectreco.util.PathLoader;
+import subjectreco.evaluator.Evaluator;
 
 import java.util.Map;
 
@@ -90,11 +87,8 @@ public class WrappedHFEval {
 
     public double execute() {
         evaluator.setRecommenderBuilder(recoConfig, mm);
-
         evaluator.execute(50L);
-
         Map<String, Double[]> results = evaluator.getResults();
-
         return results.get("RMSE")[0];
     }
 }
