@@ -9,7 +9,6 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.similarity.TanimotoCoefficientSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
-import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import subjectreco.recommender.similarity.AdjustedCosineSimilarity;
@@ -33,8 +32,8 @@ public class MCSeCFSimilarity implements ItemSimilarity {
     private static ThreadLocal<DataModel> grades = new ThreadLocal<>();
 
     // Single criteria similarities
-    private static UserSimilarity ratingsSim;
-    private static UserSimilarity gradesSim;
+    private static ItemSimilarity ratingsSim;
+    private static ItemSimilarity gradesSim;
     private ItemSimilarity jaccard;
     // Importance of each criteria in final similarity in [0,1]
     private double wRatings = 0.5;
@@ -137,9 +136,9 @@ public class MCSeCFSimilarity implements ItemSimilarity {
         double jac = 0;
         try {
             if (wRatings > 0.0)
-                sim1 = ratingsSim.userSimilarity(subject1, subject2);
+                sim1 = ratingsSim.itemSimilarity(subject1, subject2);
             if (wGrades > 0.0)
-                sim2 = gradesSim.userSimilarity(subject1, subject2);
+                sim2 = gradesSim.itemSimilarity(subject1, subject2);
             jac = jaccard.itemSimilarity(subject1, subject2);
         } catch (TasteException e) {
             e.printStackTrace();
