@@ -125,7 +125,10 @@ public class HFStudentCourse extends BaseRS {
                 // Order estimations by value of preference and return the  highest
                 List<RecommendedItem> result = possibles.subList(0, nItems - nPrefs);
                 result.sort(ByValueRecommendedItemComparator.getInstance());
-                return result.subList(0, howMany);
+                if (result.size() < howMany)
+                    return result;
+                else
+                    return result.subList(0, howMany);
             }
 
             @Override
