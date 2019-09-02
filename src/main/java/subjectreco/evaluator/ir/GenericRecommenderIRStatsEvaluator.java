@@ -1,22 +1,10 @@
 package subjectreco.evaluator.ir;
 
-import java.util.List;
-import java.util.Random;
-
+import com.google.common.base.Preconditions;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.eval.DataModelBuilder;
-import org.apache.mahout.cf.taste.eval.IRStatistics;
-import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
-import org.apache.mahout.cf.taste.eval.RecommenderIRStatsEvaluator;
-import org.apache.mahout.cf.taste.eval.RelevantItemsDataSplitter;
-import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.common.RunningAverage;
-import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.eval.*;
+import org.apache.mahout.cf.taste.impl.common.*;
 import org.apache.mahout.cf.taste.impl.eval.GenericRelevantItemsDataSplitter;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
@@ -27,7 +15,8 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Modification of the GenericRecommenderIRStatsEvaluator from Mahout that allow specific seed for random generations.
@@ -50,6 +39,8 @@ public final class GenericRecommenderIRStatsEvaluator implements RecommenderIRSt
 
     GenericRecommenderIRStatsEvaluator(Random random) {
         this(new GenericRelevantItemsDataSplitter(), random);
+        // Get specific courses
+        //this(new MyRelevantItemsDataSplitter(), random);
     }
 
     private GenericRecommenderIRStatsEvaluator(RelevantItemsDataSplitter dataSplitter, Random random) {
@@ -131,6 +122,21 @@ public final class GenericRecommenderIRStatsEvaluator implements RecommenderIRSt
                     intersectionSize++;
                 }
             }
+
+            // Logic to print RMSE of estimation
+            /*double error = 0.0;
+            System.out.println("==============================\nUsuario: " + userID);
+            System.out.println("        Real -- Estimado");
+            LongPrimitiveIterator iterator = relevantItemIDs.iterator();
+            while (iterator.hasNext()) {
+                long itemID = iterator.nextLong();
+                double real = dataModel.getPreferenceValue(userID, itemID);
+                double estimado = recommender.estimatePreference(userID, itemID);
+                System.out.println(itemID + " -> " + real + " -- " + estimado);
+                error += (real-estimado)*(real-estimado);
+            }
+            System.out.println("ERROR AL CUADRADO: " + error);*/
+
 
             int numRecommendedItems = recommendedItems.size();
 
