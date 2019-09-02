@@ -1,5 +1,5 @@
 <configuration>
-	<recommender name = 'subjectreco.recommender.CFUser'>
+	<recommender name = 'com.uco.rs.recommender.CFUser'>
 		<normalize>false</normalize>
 		<!-- PearsonCorrelationSimilarity / EuclideanDistanceSimilarity / CityBlockSimilarity /
 		SpearmanCorrelationSimilarity / UncenteredCosineSimilarity -->

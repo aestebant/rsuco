@@ -1,5 +1,5 @@
 <configuration>
-	<evaluator name="subjectreco.evaluator.SplitEvaluator">
+	<evaluator name="com.uco.rs.evaluator.SplitEvaluator">
 		<computeRMSE>true</computeRMSE>
 		<computeMAE>false</computeMAE>
 		<computeBinaryClassification>false</computeBinaryClassification>

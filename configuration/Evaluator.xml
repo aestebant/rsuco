@@ -1,13 +1,13 @@
 <configuration>
-	<evaluator name="subjectreco.evaluator.SplitEvaluator">
+	<evaluator name="com.uco.rs.evaluator.KFoldEvaluator">
 		<computeRMSE>true</computeRMSE>
 		<computeMAE>false</computeMAE>
 		<computeBinaryClassification>false</computeBinaryClassification>
-		<useRandomSplit>false</useRandomSplit>
+		<useRandomSplit>true</useRandomSplit>
 		<useSpecificThreshold>true</useSpecificThreshold>
 		<dataPercent>1.0</dataPercent>
 		<trainPercent>0.8</trainPercent>
-		<foldsNumber>2</foldsNumber>
+		<foldsNumber>5</foldsNumber>
 		<reporter>
             <reportOnConsole>true</reportOnConsole>
             <reportOnFile>false</reportOnFile>

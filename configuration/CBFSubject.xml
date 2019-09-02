@@ -1,13 +1,13 @@
 <configuration>
-	<recommender name='subjectreco.recommender.CBFSubject'>
+	<recommender name='com.uco.rs.recommender.CBFCourse'>
 		<similarity>
 			<!-- TanimotoCoefficientSimilarity / LogLikelihoodSimilarity -->
 			<professorsSimilarity>org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity</professorsSimilarity>
 			<competencesSimilarity>org.apache.mahout.cf.taste.impl.similarity.TanimotoCoefficientSimilarity</competencesSimilarity>
-			<professorsWeight>0.0</professorsWeight>
-			<areaWeight>0.0</areaWeight>
-			<competencesWeight>0.0</competencesWeight>
-			<contentWeight>1.0</contentWeight>
+			<professorsWeight>0.25</professorsWeight>
+			<areaWeight>0.25</areaWeight>
+			<competencesWeight>0.25</competencesWeight>
+			<contentWeight>0.25</contentWeight>
 			<documentaryDB>documentaryDB</documentaryDB>
 		</similarity>
 	</recommender>

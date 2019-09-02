@@ -1,6 +1,6 @@
 <configuration>
     <irstats>
-        <at>5</at>
+        <at>4</at>
         <dataPercent>1.0</dataPercent>
         <threshold>3.0</threshold>
     </irstats>
