@@ -6,6 +6,10 @@ RSUCO is a course recommendation system designed to provide personalized recomme
 
 This repository provides the readers of the paper with the necessary instructions to access the source code of the proposal and to obtain the recommendations themselves, as long as they have a database with the appropriate format.
 
+## Dataset
+
+The dataset used to conduct this study is available in this [repository](https://www.uco.es/kdis/course-recommendation-dataset/), corresponding to 2500 entries from 95 students and 63 courses collected from the Computer Engineering Bachelor program at University of Córdoba and properly anonymized.
+
 ## Project structure
 
 * `src/main/java`: Contains the main source code of the project, structured in packages:
